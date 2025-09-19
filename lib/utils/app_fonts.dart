@@ -14,8 +14,6 @@ class AppFont {
 
   static final regularColorBlack =
       regular.copyWith(color: AppColors.colorBlack);
-  static final regularColorWhite =
-      regular.copyWith(color: AppColors.colorWhite);
 
 }
 
