@@ -1,0 +1,12 @@
+{
+  "@@locale": "en",
+
+  "loginTitle": "Welcome back!",
+  "loginSubTitle": "Please Sign in to continue.",
+  "loginEmailLbl": "Email or Phone Number",
+  "loginEmailSH": "Enter your email",
+  "loginPasswordLbl": "Enter Password",
+  "loginPasswordSH": "Enter Password",
+  "loginBtn": "Sign In",
+  "loginForgotBtn": "Forgot Password?"
+}

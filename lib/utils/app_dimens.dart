@@ -64,6 +64,7 @@ class Dimens {
   static const double margin56 = 56;
   static const double margin57 = 57;
   static const double margin58 = 58;
+  static const double margin59 = 59;
   static const double margin60 = 60;
   static const double margin62 = 62;
   static const double margin64 = 64;
@@ -502,6 +503,7 @@ class Dimens {
   static const double margin500 = 500;
   static const double margin512 = 512;
   static const double margin518 = 518;
+  static const double margin520 = 520;
   static const double margin532 = 532;
   static const double margin545 = 545;
   static const double margin548 = 548;

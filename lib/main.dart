@@ -1,6 +1,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:hookahhabibi/l10n/app_localizations.dart';
 import 'package:hookahhabibi/utils/app_routes.dart';
 import 'package:hookahhabibi/utils/routes_generator.dart';
 
@@ -19,6 +20,9 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      localizationsDelegates: [
+        AppLocalizations.delegate,
+      ],
       debugShowCheckedModeBanner: false,
       initialRoute: AppRoutes.routesSplash,
       onGenerateRoute: RouteGenerator.generateRoute,

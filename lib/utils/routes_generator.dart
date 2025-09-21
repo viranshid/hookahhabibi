@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:hookahhabibi/Screen/Location/View/HHLocationScreen.dart';
 import 'package:hookahhabibi/Screen/SplashScreen.dart';
+import 'package:hookahhabibi/Screen/Login/HHLogin.dart';
 import 'package:hookahhabibi/utils/app_routes.dart';
-
 
 /// > RouteGenerator is a class that generates routes for the application
 class RouteGenerator {
@@ -15,6 +16,16 @@ class RouteGenerator {
         return MaterialPageRoute(
             builder: (_) => const SplashScreen(),
             settings: const RouteSettings(name: AppRoutes.routesSplash));
+
+      case AppRoutes.routesLogin:
+        return MaterialPageRoute(
+            builder: (_) => const HHLogin(),
+            settings: const RouteSettings(name: AppRoutes.routesLogin));
+
+      case AppRoutes.routesLocation: // Add this new route
+        return MaterialPageRoute(
+            builder: (_) => const HHLocationScreen(),
+            settings: const RouteSettings(name: AppRoutes.routesLocation));
 
       default:
         return MaterialPageRoute(

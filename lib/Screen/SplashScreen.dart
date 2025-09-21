@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hookahhabibi/Screen/Login/HHLogin.dart';
 import 'package:hookahhabibi/utils/app_colors.dart';
 import 'package:hookahhabibi/utils/app_images.dart';
 
@@ -20,10 +21,10 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> navigateToNextScreen() async {
     await Future.delayed(const Duration(seconds: 3));
 
-    // Navigator.pushReplacement(
-    //   context,
-    //   MaterialPageRoute(builder: (context) => const LoginScreen()),
-    // );
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const HHLogin()),
+    );
   }
 
   @override
