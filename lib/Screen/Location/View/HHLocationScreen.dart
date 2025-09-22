@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hookahhabibi/Screen/Location/Model/HHLocationCardModel.dart';
 import 'package:hookahhabibi/Enums/HHButtonType.dart';
 import 'package:hookahhabibi/Screen/Location/View/HHLocationCard.dart';
+import 'package:hookahhabibi/Screen/Welcom/View/HHWelcom.dart';
 import 'package:hookahhabibi/utils/AppText.dart';
 import 'package:hookahhabibi/utils/AppTextStyle.dart';
 import 'package:hookahhabibi/utils/app_colors.dart';
@@ -22,14 +23,14 @@ class _HHLocationScreenState extends State<HHLocationScreen> {
       id: '1',
       title: 'Downtown Hookah Lounge',
       subtitle: 'Experience the finest hookah selection in the heart of the city with premium tobacco blends and comfortable seating for an unforgettable evening.',
-      imageUrl: 'https://example.com/location1.jpg',
+      imageUrl: 'http://myapp.hookahhabibi.co.id/uploads/location_images/DkFVgy5x9QRCbisw.png',
       isSelected: false,
     ),
     HHLocationCardModel(
       id: '2',
       title: 'Rooftop Paradise',
       subtitle: 'Enjoy breathtaking city views while savoring our signature hookah flavors in an elegant rooftop setting with ambient lighting and cozy atmosphere.',
-      imageUrl: 'https://example.com/location2.jpg',
+      imageUrl: 'http://myapp.hookahhabibi.co.id/uploads/location_images/Zp5A9QkFfp6nN0Rr.png',
       isSelected: true,
     ),
     HHLocationCardModel(
@@ -222,7 +223,10 @@ class _HHLocationScreenState extends State<HHLocationScreen> {
 
     print('Continue pressed with selected location: ${selectedLocation.title}');
 
-    // Implement navigation logic here
-    // Navigator.pushNamed(context, '/nextScreen', arguments: selectedLocation);
+    // Navigate to Welcome Screen
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const HHWelcome()),
+    );
   }
 }

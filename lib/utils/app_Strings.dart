@@ -9,4 +9,10 @@ class APPStrings {
   static const String loginPasswordSH = 'Enter Password';
   static const String loginBtn = 'Sign In';
   static const String loginForgotBtn = 'Forgot Password?';
+
+  static const String wcTitle = 'SHISHA LOUNGE & CAFE';
+  static const String wcSubTitle = 'Discover the Flavours of the Middle East, where Shisha Meets Culinary Delights! ';
+
+
+
 }

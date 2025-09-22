@@ -28,6 +28,7 @@ class HHLocationCard extends StatelessWidget {
       child: Container(
         width: Dimens.margin512,
         height: Dimens.margin130,
+        clipBehavior: Clip.hardEdge, // This will hide the outside shadow
         decoration: BoxDecoration(
           color: const Color(0xFF00541A), // Secondary color
           borderRadius: BorderRadius.circular(Dimens.margin18),
@@ -209,76 +210,6 @@ class HHLocationCard extends StatelessWidget {
               ),
             ),
         ],
-      ),
-    );
-  }
-}
-
-// Example usage widget
-class LocationCardExample extends StatefulWidget {
-  const LocationCardExample({Key? key}) : super(key: key);
-
-  @override
-  State<LocationCardExample> createState() => _LocationCardExampleState();
-}
-
-class _LocationCardExampleState extends State<LocationCardExample> {
-  List<HHLocationCardModel> locations = [
-    HHLocationCardModel(
-      id: '1',
-      title: 'Downtown Lounge',
-      subtitle: 'Experience the finest hookah selection in the heart of the city with premium tobacco blends and comfortable seating.',
-      imageUrl: 'https://example.com/location1.jpg',
-      isSelected: false,
-    ),
-    HHLocationCardModel(
-      id: '2',
-      title: 'Rooftop Paradise',
-      subtitle: 'Enjoy breathtaking city views while savoring our signature hookah flavors in an elegant rooftop setting.',
-      imageUrl: 'https://example.com/location2.jpg',
-      isSelected: true,
-    ),
-    HHLocationCardModel(
-      id: '3',
-      title: 'Garden Oasis',
-      subtitle: 'Relax in our beautiful garden atmosphere with natural surroundings and the best hookah experience in town.',
-      imageUrl: 'https://example.com/location3.jpg',
-      isSelected: false,
-    ),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.colorBlack,
-      body: Padding(
-        padding: const EdgeInsets.all(Dimens.margin20),
-        child: ListView.separated(
-          itemCount: locations.length,
-          separatorBuilder: (context, index) => SizedBox(height: Dimens.margin16),
-          itemBuilder: (context, index) {
-            return HHLocationCard(
-              location: locations[index],
-              onSelectionChanged: (location, isSelected) {
-                setState(() {
-                  locations[index] = location.copyWith(isSelected: isSelected);
-                });
-              },
-              onTap: (location) {
-                print('Location tapped: ${location.title}');
-                print('Location ID: ${location.id}');
-                print('Location data: ${location.toString()}');
-
-                // Example: Navigate to location details screen
-                // Navigator.pushNamed(
-                //   context,
-                //   '/locationDetails',
-                //   arguments: location,
-                // );
-              },
-            );
-          },
-        ),
       ),
     );
   }

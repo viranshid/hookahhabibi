@@ -28,6 +28,7 @@ enum AppTextStyle {
   oswaldSemiBold20UppercaseLight,
   oswaldLight16Gray,
   oswaldRegular20UppercaseLight,
+  oswaldRegular14UppercaseLight,
 
   // Merriweather Font Styles
   merriweatherItalic22White,
@@ -184,6 +185,16 @@ class AppTextStyleManager {
           height: 1.0, // 100%
           letterSpacing: 0,
           color: AppColors.colorFFFFFF,
+        );
+
+      case AppTextStyle.oswaldRegular14UppercaseLight:
+        return TextStyle(
+          fontFamily: _oswaldFont,
+          fontWeight: FontWeight.w400,
+          fontSize: 14,
+          height: 18 / 14, // line-height / font-size
+          letterSpacing: 0,
+          color: AppColors.colorECC16E,
         );
 
       case AppTextStyle.oswaldSemiBold26Light:
