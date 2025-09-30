@@ -223,10 +223,15 @@ class _HHLocationScreenState extends State<HHLocationScreen> {
 
     print('Continue pressed with selected location: ${selectedLocation.title}');
 
-    // Navigate to Welcome Screen
+    // Navigate to Menu Screen with selected location data
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => const HHWelcome()),
+      MaterialPageRoute(
+        builder: (context) => HHWelcome(
+          locationName: selectedLocation.title,
+          locationId: selectedLocation.id,
+        ),
+      ),
     );
   }
 }

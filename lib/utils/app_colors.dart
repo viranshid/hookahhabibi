@@ -25,6 +25,10 @@ class AppColors {
   static const colorD9D9D9 = Color(0xFFD9D9D9); // Light gray
   static const color5E0000 = Color(0x5E000000);
   static const color660000 = Color(0x66000000);
+  static const color00541A = Color(0xFF00541A);
+  static const color004216 = Color(0xFF004216);
+  static const color33FFFF = Color(0x33FFFFFF);
+
 
   // Your existing gradients
   static const linearGradientFB9400FFAB38 = LinearGradient(

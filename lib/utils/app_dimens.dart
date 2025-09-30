@@ -94,6 +94,7 @@ class Dimens {
   static const double margin90 = 90;
   static const double margin91 = 91;
   static const double margin92 = 92;
+  static const double margin93 = 93;
   static const double margin94 = 94;
   static const double margin95 = 95;
   static const double margin96 = 96;

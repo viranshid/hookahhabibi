@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hookahhabibi/Enums/HHWelcomeMenuType.dart';
+import 'package:hookahhabibi/Screen/Menu/View/HHMenuScreen.dart';
 import 'package:hookahhabibi/Screen/Welcom/View/HHWelcomeMenuCard.dart';
 import 'package:hookahhabibi/utils/AppText.dart';
 import 'package:hookahhabibi/utils/AppTextStyle.dart';
@@ -9,7 +10,14 @@ import 'package:hookahhabibi/utils/app_images.dart';
 import 'package:hookahhabibi/utils/app_Strings.dart';
 
 class HHWelcome extends StatefulWidget {
-  const HHWelcome({Key? key}) : super(key: key);
+  final String locationName;
+  final String locationId;
+
+  const HHWelcome({
+    Key? key,
+    this.locationName = 'Default Location',
+    this.locationId = '',
+  }): super(key: key);
 
   @override
   State<HHWelcome> createState() => _HHWelcomeState();
@@ -178,12 +186,16 @@ class _HHWelcomeState extends State<HHWelcome> {
     print('Menu item type: ${menuType.name}');
     print('Image path: ${menuType.imagePath}');
 
-    // Implement navigation or other logic here
-    // For example:
-    // Navigator.pushNamed(context, '/menu', arguments: menuType);
-
-    // You can also call a callback function if needed
-    _onMenuItemSelected(menuType);
+    // Navigate to Menu Screen with location data
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => HHMenuScreen(
+          locationName: widget.locationName,
+          locationId: widget.locationId,
+        ),
+      ),
+    );
   }
 
   void _onMenuItemSelected(HHWelcomeMenuType menuType) {

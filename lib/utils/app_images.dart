@@ -7,6 +7,7 @@ class APPImages {
   static const icLoginBg = '${imageBaseURL}bg_login.png';
   static const icLoginLogo = '${imageBaseURL}logo_Hookah.png';
   static const imgLocationSideBar = '${imageBaseURL}img_location_sidebar.png';
+  static const icHookah = '${imageBaseURL}Ic_Hookah.png';
 
   //welcome screen
   static const imgWelcomeBg = '${imageBaseURL}bg_welcome.png';
@@ -20,7 +21,28 @@ class APPImages {
   static const imgShisha = '${imageBaseURL}img_shisha.png';
   static const imgStarters = '${imageBaseURL}img_starters.png';
   static const imgTea = '${imageBaseURL}img_tea.png';
+  static const imgMenuListLogoMin = '${imageBaseURL}img_Menu_List_Logo_min.png';
 
+
+  //Menu screen
+  static const imgHookahLogoBg = '${imageBaseURL}Hookah_Logo_Bg.png';
+  static const imgSapratorLine = '${imageBaseURL}Img_Saprator_Line.png';
+  static const imgMenuBg = '${imageBaseURL}Menu_Bg.png';
+  static const imgHookahMenuLogo = '${imageBaseURL}img_Hookah_Menu_Logo.png';
+  static const icErrorBack = '${imageBaseURL}ic_error_back.png';
+  static const icErrorForword = '${imageBaseURL}ic_error_forword.png';
+  static const imgMenuBtnMinimizeBg = '${imageBaseURL}img_Menu_Btn_Minimize_Bg.png';
+  static const icAvatar = '${imageBaseURL}3d_avatar.png';
+  static const icLock = '${imageBaseURL}ic_lock.png';
+  static const icMapPin = '${imageBaseURL}ic_Map-Pin.png';
+  static const icChilli = '${imageBaseURL}ic_chilli.png';
+  static const icVeg = '${imageBaseURL}ic_veg.png';
+
+
+  //Temp Images
+  static const temp1 = '${imageBaseURL}temp1.jpg';
+  static const temp2 = '${imageBaseURL}temp2.jpg';
+  static const temp3 = '${imageBaseURL}temp3.jpg';
 
   static const String facebook = '${imageBaseURLSVG}facebook.svg';
 }
