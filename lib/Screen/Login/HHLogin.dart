@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hookahhabibi/Enums/HHButtonType.dart';
+import 'package:hookahhabibi/Managers/HHAppManager.dart';
 import 'package:hookahhabibi/Screen/Location/View/HHLocationScreen.dart';
 import 'package:hookahhabibi/utils/AppText.dart';
 import 'package:hookahhabibi/utils/AppTextStyle.dart';
@@ -23,16 +24,20 @@ class _HHLoginState extends State<HHLogin> with KeyboardHandlingMixin {
   final TextEditingController _passwordController = TextEditingController();
   final FocusNode _emailFocusNode = FocusNode();
   final FocusNode _passwordFocusNode = FocusNode();
+  final HHAppManager _appManager = HHAppManager();
+
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    // Force landscape orientation
     KeyboardUtils.setLandscapeOrientation();
-
-    // Add focus nodes for automatic keyboard handling
     addFocusNode(_emailFocusNode);
     addFocusNode(_passwordFocusNode);
+
+    // For testing, pre-fill credentials
+    _emailController.text = 'mt11@example.com';
+    _passwordController.text = 'Test@123';
   }
 
   @override
@@ -41,7 +46,7 @@ class _HHLoginState extends State<HHLogin> with KeyboardHandlingMixin {
     _passwordController.dispose();
     _emailFocusNode.dispose();
     _passwordFocusNode.dispose();
-    disposeKeyboardHandling(); // Clean up keyboard handling
+    disposeKeyboardHandling();
     super.dispose();
   }
 
@@ -66,7 +71,13 @@ class _HHLoginState extends State<HHLogin> with KeyboardHandlingMixin {
           fit: BoxFit.cover,
         ),
       ),
-      child: Stack(children: [_buildLogo(), _buildLoginBox()]),
+      child: Stack(
+        children: [
+          _buildLogo(),
+          _buildLoginBox(),
+          if (_isLoading) _buildLoadingOverlay(),
+        ],
+      ),
     );
   }
 
@@ -161,6 +172,7 @@ class _HHLoginState extends State<HHLogin> with KeyboardHandlingMixin {
           focusNode: _emailFocusNode,
           keyboardType: TextInputType.emailAddress,
           textInputAction: TextInputAction.next,
+          enabled: !_isLoading,
           onSubmitted: (_) {
             FocusScope.of(context).requestFocus(_passwordFocusNode);
           },
@@ -185,6 +197,7 @@ class _HHLoginState extends State<HHLogin> with KeyboardHandlingMixin {
           isSecureField: true,
           focusNode: _passwordFocusNode,
           textInputAction: TextInputAction.done,
+          enabled: !_isLoading,
           onSubmitted: (_) => _handleSignIn(),
         ),
       ],
@@ -195,7 +208,8 @@ class _HHLoginState extends State<HHLogin> with KeyboardHandlingMixin {
     return HHButton(
       text: APPStrings.loginBtn,
       type: HHButtonType.normal,
-      onPressed: _handleSignIn,
+      onPressed: _isLoading ? null : _handleSignIn,
+      isEnabled: !_isLoading,
     );
   }
 
@@ -203,17 +217,29 @@ class _HHLoginState extends State<HHLogin> with KeyboardHandlingMixin {
     return HHButton(
       text: APPStrings.loginForgotBtn,
       type: HHButtonType.onlyText,
-      onPressed: _handleForgotPassword,
+      onPressed: _isLoading ? null : _handleForgotPassword,
+      isEnabled: !_isLoading,
     );
   }
 
-  void _handleSignIn() {
-    hideKeyboard(); // Use the mixin method
+  Widget _buildLoadingOverlay() {
+    return Container(
+      color: Colors.black54,
+      child: const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(AppColors.colorECC16E),
+        ),
+      ),
+    );
+  }
 
-    // Basic validation (you can enhance this)
+  Future<void> _handleSignIn() async {
+    hideKeyboard();
+
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
+    // Validation
     if (email.isEmpty) {
       _showSnackBar('Please enter your email or phone number');
       return;
@@ -224,31 +250,55 @@ class _HHLoginState extends State<HHLogin> with KeyboardHandlingMixin {
       return;
     }
 
-    // Implement sign in logic here
-    print('Sign In pressed');
-    print('Email: $email');
-    print('Password: $password');
+    setState(() {
+      _isLoading = true;
+    });
 
-    // Navigate to Location Screen
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const HHLocationScreen()),
-    );
+    try {
+      // Call API through AppManager
+      final response = await _appManager.login(
+        email: email,
+        password: password,
+      );
+
+      if (response.success) {
+        // Login successful, navigate to location screen
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const HHLocationScreen(),
+            ),
+          );
+        }
+      } else {
+        // Login failed
+        _showSnackBar(response.message ?? 'Login failed');
+      }
+    } catch (e) {
+      _showSnackBar('An error occurred: ${e.toString()}');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   void _handleForgotPassword() {
-    hideKeyboard(); // Use the mixin method
-
-    // Implement forgot password logic
-    print('Forgot Password pressed');
+    hideKeyboard();
+    _showSnackBar('Forgot password feature coming soon');
   }
 
   void _showSnackBar(String message) {
+    if (!mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
         backgroundColor: AppColors.colorBD7D28,
-        duration: const Duration(seconds: 2),
+        duration: const Duration(seconds: 3),
       ),
     );
   }

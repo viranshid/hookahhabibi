@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:hookahhabibi/Enums/HHWelcomeMenuType.dart';
+import 'package:hookahhabibi/Managers/HHAppManager.dart';
+import 'package:hookahhabibi/Screen/Menu/Model/HHDishCategoryModel.dart';
 import 'package:hookahhabibi/Screen/Menu/View/HHMenuListCard.dart';
 import 'package:hookahhabibi/Screen/Menu/View/HHMenuContentArea.dart';
 import 'package:hookahhabibi/utils/AppText.dart';
@@ -11,11 +12,13 @@ import 'package:hookahhabibi/utils/app_images.dart';
 class HHMenuScreen extends StatefulWidget {
   final String locationName;
   final String locationId;
+  final String? selectedCategoryId;
 
   const HHMenuScreen({
     Key? key,
     required this.locationName,
     required this.locationId,
+    this.selectedCategoryId,
   }) : super(key: key);
 
   @override
@@ -24,18 +27,41 @@ class HHMenuScreen extends StatefulWidget {
 
 class _HHMenuScreenState extends State<HHMenuScreen> {
   bool isMenuOpen = true;
-  String locationName = 'Karet Kuningan, Jakarta 12940';
-  String categoryTitle = 'Cool Appetizer and Salad';
+  String locationName = '';
+  String categoryTitle = '';
+  final HHAppManager _appManager = HHAppManager();
 
-  // Add proper state management for selected menu item
-  HHWelcomeMenuType? selectedMenuItem;
+  HHDishCategoryModel? selectedMenuItem;
 
   @override
   void initState() {
     super.initState();
-    // Initialize with first menu item
-    selectedMenuItem = HHWelcomeMenuType.getAllItems().first;
-    categoryTitle = selectedMenuItem?.title ?? 'Cool Appetizer and Salad';
+    locationName = widget.locationName;
+    _loadInitialData();
+  }
+
+  Future<void> _loadInitialData() async {
+    // Load categories if not already loaded
+    if (_appManager.menuManager.categories.isEmpty) {
+      await _appManager.menuManager.loadCategories();
+    }
+
+    // Set selected category
+    if (widget.selectedCategoryId != null) {
+      selectedMenuItem = _appManager.menuManager.categories.firstWhere(
+            (cat) => cat.id == widget.selectedCategoryId,
+        orElse: () => _appManager.menuManager.categories.first,
+      );
+    } else if (_appManager.menuManager.categories.isNotEmpty) {
+      selectedMenuItem = _appManager.menuManager.categories.first;
+    }
+
+    if (selectedMenuItem != null) {
+      categoryTitle = selectedMenuItem!.title;
+      // Load dishes for selected category
+      _appManager.menuManager.selectCategory(selectedMenuItem!);
+      setState(() {});
+    }
   }
 
   @override
@@ -81,12 +107,14 @@ class _HHMenuScreenState extends State<HHMenuScreen> {
             isMenuOpen = value;
           });
         },
-        onMenuItemSelected: (menuType) {
+        onMenuItemSelected: (category) {
           setState(() {
-            selectedMenuItem = menuType;
-            categoryTitle = menuType.title;
+            selectedMenuItem = category;
+            categoryTitle = category.title;
           });
-          print('Selected menu: ${menuType.title}');
+          // Select category in menu manager to load dishes
+          _appManager.menuManager.selectCategory(category);
+          print('Selected menu: ${category.title}');
         },
       ),
     );
@@ -102,7 +130,7 @@ class _HHMenuScreenState extends State<HHMenuScreen> {
             color: const Color(0xFF004216),
             border: const Border(
               bottom: BorderSide(
-                color: Color(0x1AFFFFFF), // #FFFFFF1A
+                color: Color(0x1AFFFFFF),
                 width: Dimens.margin2,
               ),
             ),
@@ -122,10 +150,9 @@ class _HHMenuScreenState extends State<HHMenuScreen> {
             ],
           ),
         ),
-        // Position the toggle button half outside
         Positioned(
-          left: -Dimens.margin18, // Half of 36 (button width) outside
-          top: (Dimens.margin80 - Dimens.margin36) / 2, // Center vertically
+          left: -Dimens.margin18,
+          top: (Dimens.margin80 - Dimens.margin36) / 2,
           child: _buildMenuToggleButton(),
         ),
       ],
@@ -179,7 +206,6 @@ class _HHMenuScreenState extends State<HHMenuScreen> {
       child: Row(
         children: [
           SizedBox(width: Dimens.margin4),
-          // Avatar
           Container(
             width: Dimens.margin42,
             height: Dimens.margin42,
@@ -211,7 +237,6 @@ class _HHMenuScreenState extends State<HHMenuScreen> {
             ),
           ),
           SizedBox(width: Dimens.margin12),
-          // Lock Icon
           Image.asset(
             APPImages.icLock,
             width: Dimens.margin26,
@@ -269,6 +294,7 @@ class _HHMenuScreenState extends State<HHMenuScreen> {
   Widget _buildContent() {
     return HHMenuContentArea(
       isMenuOpen: isMenuOpen,
+      selectedCategoryId: selectedMenuItem?.id,
     );
   }
 }

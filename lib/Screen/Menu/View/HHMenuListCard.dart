@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:hookahhabibi/Enums/HHWelcomeMenuType.dart';
+import 'package:hookahhabibi/Managers/HHAppManager.dart';
+import 'package:hookahhabibi/Screen/Menu/Model/HHDishCategoryModel.dart';
 import 'package:hookahhabibi/Screen/Menu/View/HHMenuItemCard.dart';
 import 'package:hookahhabibi/utils/AppText.dart';
 import 'package:hookahhabibi/utils/AppTextStyle.dart';
@@ -10,8 +11,8 @@ import 'package:hookahhabibi/utils/app_images.dart';
 class HHMenuListCard extends StatefulWidget {
   final bool isMenuOpen;
   final Function(bool)? onMenuToggle;
-  final HHWelcomeMenuType? selectedMenuItem;
-  final Function(HHWelcomeMenuType)? onMenuItemSelected;
+  final HHDishCategoryModel? selectedMenuItem;
+  final Function(HHDishCategoryModel)? onMenuItemSelected;
 
   const HHMenuListCard({
     Key? key,
@@ -27,14 +28,33 @@ class HHMenuListCard extends StatefulWidget {
 
 class _HHMenuListCardState extends State<HHMenuListCard> {
   final ScrollController _scrollController = ScrollController();
+  final HHAppManager _appManager = HHAppManager();
   int? _expandedIndex;
-  HHWelcomeMenuType? _internalSelectedItem; // Internal state for selection
+  HHDishCategoryModel? _internalSelectedItem;
+  List<HHDishCategoryModel> _categories = [];
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    // Initialize with the passed selected item or default to first item
-    _internalSelectedItem = widget.selectedMenuItem ?? HHWelcomeMenuType.getAllItems().first;
+    _loadCategories();
+  }
+
+  Future<void> _loadCategories() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    await _appManager.menuManager.loadCategories();
+
+    setState(() {
+      _categories = _appManager.menuManager.categories;
+      // Initialize with the passed selected item or default to first item
+      if (_categories.isNotEmpty) {
+        _internalSelectedItem = widget.selectedMenuItem ?? _categories.first;
+      }
+      _isLoading = false;
+    });
   }
 
   @override
@@ -59,13 +79,15 @@ class _HHMenuListCardState extends State<HHMenuListCard> {
       width: widget.isMenuOpen ? Dimens.margin300 : Dimens.margin130,
       height: double.infinity,
       decoration: const BoxDecoration(
-        color: Colors.transparent, // Removed background color
+        color: Colors.transparent,
         borderRadius: BorderRadius.only(
           topRight: Radius.circular(Dimens.margin10),
           bottomRight: Radius.circular(Dimens.margin10),
         ),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.max,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildLogoSection(),
           if (widget.isMenuOpen) _buildSeparatorLine(),
@@ -139,29 +161,44 @@ class _HHMenuListCardState extends State<HHMenuListCard> {
     );
   }
 
-  // Keep _buildMenuScrollView as it was originally
   Widget _buildMenuScrollView() {
-    final menuItems = HHWelcomeMenuType.getAllItems();
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(AppColors.colorECC16E),
+        ),
+      );
+    }
+
+    if (_categories.isEmpty) {
+      return Center(
+        child: AppText(
+          text: 'No categories available',
+          appTextStyle: AppTextStyle.jostMedium16Gray,
+        ),
+      );
+    }
 
     return ListView.builder(
       controller: _scrollController,
       physics: const BouncingScrollPhysics(),
-      itemCount: menuItems.length,
+      padding: EdgeInsets.zero, // Remove default padding
+      itemCount: _categories.length,
       itemBuilder: (context, index) {
-        final menuItem = menuItems[index];
+        final category = _categories[index];
         final isExpanded = widget.isMenuOpen && _expandedIndex == index;
-        final isSelected = _internalSelectedItem == menuItem;
+        final isSelected = _internalSelectedItem?.id == category.id;
 
-        print('Building item ${menuItem.title}: isSelected = $isSelected');
+        print('Building item ${category.title}: isSelected = $isSelected');
 
         return HHMenuItemCard(
-          title: menuItem.title,
-          imagePath: menuItem.imagePath,
+          title: category.title,
+          imagePath: category.image,
           isExpanded: isExpanded,
           isSelected: isSelected,
           isMenuOpen: widget.isMenuOpen,
           onTap: () {
-            print('Tapped on ${menuItem.title}');
+            print('Tapped on ${category.title}');
 
             setState(() {
               if (_expandedIndex == index) {
@@ -169,10 +206,10 @@ class _HHMenuListCardState extends State<HHMenuListCard> {
               } else {
                 _expandedIndex = index;
               }
-              _internalSelectedItem = menuItem;
+              _internalSelectedItem = category;
             });
 
-            widget.onMenuItemSelected?.call(menuItem);
+            widget.onMenuItemSelected?.call(category);
 
             print('Selected item is now: ${_internalSelectedItem?.title}');
           },

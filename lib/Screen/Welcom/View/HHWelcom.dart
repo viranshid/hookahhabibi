@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:hookahhabibi/Enums/HHWelcomeMenuType.dart';
+import 'package:hookahhabibi/Managers/HHAppManager.dart';
+import 'package:hookahhabibi/Screen/Menu/Model/HHDishCategoryModel.dart';
 import 'package:hookahhabibi/Screen/Menu/View/HHMenuScreen.dart';
 import 'package:hookahhabibi/Screen/Welcom/View/HHWelcomeMenuCard.dart';
 import 'package:hookahhabibi/utils/AppText.dart';
@@ -24,8 +25,30 @@ class HHWelcome extends StatefulWidget {
 }
 
 class _HHWelcomeState extends State<HHWelcome> {
-  HHWelcomeMenuType? selectedMenuItem;
+  HHDishCategoryModel? selectedMenuItem;
   final ScrollController _scrollController = ScrollController();
+  final HHAppManager _appManager = HHAppManager();
+  bool _isLoading = false;
+  List<HHDishCategoryModel> _categories = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCategories();
+  }
+
+  Future<void> _loadCategories() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    await _appManager.menuManager.loadCategories();
+
+    setState(() {
+      _categories = _appManager.menuManager.categories;
+      _isLoading = false;
+    });
+  }
 
   @override
   void dispose() {
@@ -148,6 +171,31 @@ class _HHWelcomeState extends State<HHWelcome> {
   }
 
   Widget _buildMenuScrollView() {
+    if (_isLoading) {
+      return Container(
+        margin: const EdgeInsets.only(top: Dimens.margin60),
+        height: Dimens.margin150,
+        child: const Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.colorECC16E),
+          ),
+        ),
+      );
+    }
+
+    if (_categories.isEmpty) {
+      return Container(
+        margin: const EdgeInsets.only(top: Dimens.margin60),
+        height: Dimens.margin150,
+        child: Center(
+          child: AppText(
+            text: 'No categories available',
+            appTextStyle: AppTextStyle.jostMedium16Gray,
+          ),
+        ),
+      );
+    }
+
     return Container(
       margin: const EdgeInsets.only(
         top: Dimens.margin60,
@@ -161,13 +209,13 @@ class _HHWelcomeState extends State<HHWelcome> {
           scrollDirection: Axis.horizontal,
           physics: const BouncingScrollPhysics(),
           shrinkWrap: true,
-          itemCount: HHWelcomeMenuType.getAllItems().length,
+          itemCount: _categories.length,
           separatorBuilder: (context, index) => const SizedBox(width: Dimens.margin16),
           itemBuilder: (context, index) {
-            final menuItem = HHWelcomeMenuType.getAllItems()[index];
+            final category = _categories[index];
             return HHWelcomeMenuCard(
-              menuType: menuItem,
-              isSelected: selectedMenuItem == menuItem,
+              category: category,
+              isSelected: selectedMenuItem?.id == category.id,
               onTap: _handleMenuItemTap,
             );
           },
@@ -176,106 +224,24 @@ class _HHWelcomeState extends State<HHWelcome> {
     );
   }
 
-  void _handleMenuItemTap(HHWelcomeMenuType menuType) {
+  void _handleMenuItemTap(HHDishCategoryModel category) {
     setState(() {
-      selectedMenuItem = selectedMenuItem == menuType ? null : menuType;
+      selectedMenuItem = selectedMenuItem?.id == category.id ? null : category;
     });
 
-    // Print selected menu item details
-    print('Menu item selected: ${menuType.title}');
-    print('Menu item type: ${menuType.name}');
-    print('Image path: ${menuType.imagePath}');
+    print('Category selected: ${category.title}');
+    print('Category ID: ${category.id}');
 
-    // Navigate to Menu Screen with location data
+    // Navigate to Menu Screen with location and category data
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
         builder: (context) => HHMenuScreen(
           locationName: widget.locationName,
           locationId: widget.locationId,
+          selectedCategoryId: category.id,
         ),
       ),
     );
-  }
-
-  void _onMenuItemSelected(HHWelcomeMenuType menuType) {
-    // This method can be used to handle the selection logic
-    // You can pass this as a callback to parent widgets if needed
-
-    switch (menuType) {
-      case HHWelcomeMenuType.newAddition:
-        _handleNewAddition();
-        break;
-      case HHWelcomeMenuType.exploreMenu:
-        _handleExploreMenu();
-        break;
-      case HHWelcomeMenuType.hotAppetizers:
-        _handleHotAppetizers();
-        break;
-      case HHWelcomeMenuType.starters:
-        _handleStarters();
-        break;
-      case HHWelcomeMenuType.mainCourse:
-        _handleMainCourse();
-        break;
-      case HHWelcomeMenuType.desserts:
-        _handleDesserts();
-        break;
-      case HHWelcomeMenuType.drinks:
-        _handleDrinks();
-        break;
-      case HHWelcomeMenuType.shisha:
-        _handleShisha();
-        break;
-      case HHWelcomeMenuType.tea:
-        _handleTea();
-        break;
-    }
-  }
-
-  // Individual handler methods for each menu type
-  void _handleNewAddition() {
-    print('Handling New Addition selection');
-    // Implement specific logic for New Addition
-  }
-
-  void _handleExploreMenu() {
-    print('Handling Explore Menu selection');
-    // Implement specific logic for Explore Menu
-  }
-
-  void _handleHotAppetizers() {
-    print('Handling Hot Appetizers selection');
-    // Implement specific logic for Hot Appetizers
-  }
-
-  void _handleStarters() {
-    print('Handling Starters selection');
-    // Implement specific logic for Starters
-  }
-
-  void _handleMainCourse() {
-    print('Handling Main Course selection');
-    // Implement specific logic for Main Course
-  }
-
-  void _handleDesserts() {
-    print('Handling Desserts selection');
-    // Implement specific logic for Desserts
-  }
-
-  void _handleDrinks() {
-    print('Handling Drinks selection');
-    // Implement specific logic for Drinks
-  }
-
-  void _handleShisha() {
-    print('Handling Shisha selection');
-    // Implement specific logic for Shisha
-  }
-
-  void _handleTea() {
-    print('Handling Tea selection');
-    // Implement specific logic for Tea
   }
 }

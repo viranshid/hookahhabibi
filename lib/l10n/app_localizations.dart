@@ -71,7 +71,7 @@ abstract class AppLocalizations {
 
   static const LocalizationsDelegate<AppLocalizations> delegate = _AppLocalizationsDelegate();
 
-  /// A list of this localizations delegate along with the default localizations
+  /// API list of this localizations delegate along with the default localizations
   /// delegates.
   ///
   /// Returns a list of localizations delegates containing this delegate along with
@@ -88,7 +88,7 @@ abstract class AppLocalizations {
     GlobalWidgetsLocalizations.delegate,
   ];
 
-  /// A list of this localizations delegate's supported locales.
+  /// API list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en')
   ];

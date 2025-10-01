@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hookahhabibi/utils/AppText.dart';
 import 'package:hookahhabibi/utils/AppTextStyle.dart';
+import 'package:hookahhabibi/utils/ImageCacheManager.dart';
 import 'package:hookahhabibi/utils/app_colors.dart';
 import 'package:hookahhabibi/utils/app_dimens.dart';
 import 'package:hookahhabibi/utils/app_images.dart';
@@ -31,16 +32,14 @@ class HHMenuItemCard extends StatelessWidget {
       onTap: onTap,
       child: Column(
         children: [
-          // Main container with padding for triangle space
           Padding(
             padding: const EdgeInsets.only(
-              left: 0, // 0px from left
-              right: Dimens.margin15, // 15px from right
+              left: 0,
+              right: Dimens.margin15,
             ),
             child: Stack(
               clipBehavior: Clip.none,
               children: [
-                // Sub-container with background color
                 Container(
                   decoration: BoxDecoration(
                     color: isSelected
@@ -51,13 +50,10 @@ class HHMenuItemCard extends StatelessWidget {
                       ? _buildExpandedContent()
                       : _buildCollapsedContent(),
                 ),
-
-                // Triangle indicator - positioned on right side of sub-container
                 if (isSelected) _buildTriangleIndicator(),
               ],
             ),
           ),
-          // Separator
           _buildSeparator(),
         ],
       ),
@@ -70,19 +66,39 @@ class HHMenuItemCard extends StatelessWidget {
         horizontal: Dimens.margin10,
         vertical: Dimens.margin10,
       ),
-      child: Row(
-        children: [
-          _buildImage(),
-          const SizedBox(width: Dimens.margin10),
-          Expanded(child: _buildText()),
-        ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // If we don't have enough width, show as column instead
+          if (constraints.maxWidth < 100) {
+            return Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildImage(),
+                const SizedBox(height: Dimens.margin8),
+                _buildCollapsedText(),
+              ],
+            );
+          }
+
+          // Normal expanded row layout
+          return Row(
+            children: [
+              _buildImage(),
+              const SizedBox(width: Dimens.margin10),
+              Expanded(
+                child: _buildText(),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 
   Widget _buildCollapsedContent() {
-    return Container(
+    return Padding(
       padding: const EdgeInsets.symmetric(
+        horizontal: Dimens.margin5,
         vertical: Dimens.margin10,
       ),
       child: Column(
@@ -97,40 +113,113 @@ class HHMenuItemCard extends StatelessWidget {
   }
 
   Widget _buildImage() {
-    return Container(
-      width: Dimens.margin50,
-      height: Dimens.margin50,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(Dimens.margin8),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(Dimens.margin8),
-        child: Image.asset(
-          imagePath,
-          width: Dimens.margin50,
-          height: Dimens.margin50,
-          fit: BoxFit.cover,
-          color: isSelected ? null : AppColors.colorFFFFFF.withOpacity(0.7),
-          colorBlendMode: isSelected ? null : BlendMode.modulate,
-          errorBuilder: (context, error, stackTrace) {
-            return Container(
-              width: Dimens.margin50,
-              height: Dimens.margin50,
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? AppColors.colorECC16E.withOpacity(0.5)
-                    : AppColors.color949494.withOpacity(0.5),
-                borderRadius: BorderRadius.circular(Dimens.margin8),
+    // Check if imagePath is a URL or local asset
+    final isUrl = imagePath.startsWith('http://') || imagePath.startsWith('https://');
+
+    return RepaintBoundary(
+      child: Container(
+        width: Dimens.margin70,
+        height: Dimens.margin70,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(Dimens.margin8),
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // Background image - always 70x70
+            ClipRRect(
+              borderRadius: BorderRadius.circular(Dimens.margin8),
+              child: Image.asset(
+                APPImages.icMenuBg,
+                width: Dimens.margin70,
+                height: Dimens.margin70,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    width: Dimens.margin70,
+                    height: Dimens.margin70,
+                    decoration: BoxDecoration(
+                      color: AppColors.color949494.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(Dimens.margin8),
+                    ),
+                  );
+                },
               ),
-              child: Icon(
-                Icons.restaurant_menu,
-                color: isSelected
-                    ? AppColors.colorFFFFFF
-                    : AppColors.colorECC16E,
-                size: 24,
+            ),
+            // Category icon - always 40x40
+            if (isUrl)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(Dimens.margin6),
+                child: Image.network(
+                  imagePath,
+                  key: ValueKey(imagePath), // Add key to maintain state
+                  width: Dimens.margin40,
+                  height: Dimens.margin40,
+                  fit: BoxFit.contain,
+                  cacheWidth: 40,
+                  cacheHeight: 40,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Container(
+                      width: Dimens.margin40,
+                      height: Dimens.margin40,
+                      color: Colors.transparent,
+                      child: const Center(
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(AppColors.colorECC16E),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      width: Dimens.margin40,
+                      height: Dimens.margin40,
+                      color: Colors.transparent,
+                      child: Icon(
+                        Icons.restaurant_menu,
+                        color: isSelected
+                            ? AppColors.colorFFFFFF
+                            : AppColors.colorECC16E,
+                        size: 20,
+                      ),
+                    );
+                  },
+                ),
+              )
+            else
+              ClipRRect(
+                borderRadius: BorderRadius.circular(Dimens.margin6),
+                child: Image.asset(
+                  imagePath,
+                  key: ValueKey(imagePath), // Add key to maintain state
+                  width: Dimens.margin40,
+                  height: Dimens.margin40,
+                  fit: BoxFit.contain,
+                  color: isSelected ? null : AppColors.colorFFFFFF.withOpacity(0.7),
+                  colorBlendMode: isSelected ? null : BlendMode.modulate,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      width: Dimens.margin40,
+                      height: Dimens.margin40,
+                      color: Colors.transparent,
+                      child: Icon(
+                        Icons.restaurant_menu,
+                        color: isSelected
+                            ? AppColors.colorFFFFFF
+                            : AppColors.colorECC16E,
+                        size: 20,
+                      ),
+                    );
+                  },
+                ),
               ),
-            );
-          },
+          ],
         ),
       ),
     );
@@ -168,8 +257,8 @@ class HHMenuItemCard extends StatelessWidget {
       width: double.infinity,
       height: Dimens.margin1,
       margin: const EdgeInsets.only(
-        left: 0, // Match the sub-container left padding
-        right: Dimens.margin15 + Dimens.margin10, // Right padding + separator margin
+        left: 0,
+        right: Dimens.margin15 + Dimens.margin10,
       ),
       child: CustomPaint(
         painter: DashedLinePainter(
@@ -183,12 +272,10 @@ class HHMenuItemCard extends StatelessWidget {
   }
 
   Widget _buildTriangleIndicator() {
-    // Triangle extends outside the colored box into the 15px padding space
-    double rightPosition = -15.0; // Negative to extend into the padding area
+    double rightPosition = -15.0;
     double triangleWidth = 15.0;
     double triangleHeight = 30.0;
     double topPosition = isMenuOpen ? 0 : -30;
-
 
     return Positioned(
       right: rightPosition,
@@ -216,9 +303,9 @@ class TrianglePainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     final path = Path();
-    path.moveTo(0, 0); // Top left
-    path.lineTo(size.width, size.height / 2); // Right point (middle)
-    path.lineTo(0, size.height); // Bottom left
+    path.moveTo(0, 0);
+    path.lineTo(size.width, size.height / 2);
+    path.lineTo(0, size.height);
     path.close();
 
     canvas.drawPath(path, paint);

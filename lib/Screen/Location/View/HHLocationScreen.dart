@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hookahhabibi/Managers/HHAppManager.dart';
 import 'package:hookahhabibi/Screen/Location/Model/HHLocationCardModel.dart';
 import 'package:hookahhabibi/Enums/HHButtonType.dart';
 import 'package:hookahhabibi/Screen/Location/View/HHLocationCard.dart';
@@ -18,60 +19,70 @@ class HHLocationScreen extends StatefulWidget {
 }
 
 class _HHLocationScreenState extends State<HHLocationScreen> {
-  List<HHLocationCardModel> locations = [
-    HHLocationCardModel(
-      id: '1',
-      title: 'Downtown Hookah Lounge',
-      subtitle: 'Experience the finest hookah selection in the heart of the city with premium tobacco blends and comfortable seating for an unforgettable evening.',
-      imageUrl: 'http://myapp.hookahhabibi.co.id/uploads/location_images/DkFVgy5x9QRCbisw.png',
-      isSelected: false,
-    ),
-    HHLocationCardModel(
-      id: '2',
-      title: 'Rooftop Paradise',
-      subtitle: 'Enjoy breathtaking city views while savoring our signature hookah flavors in an elegant rooftop setting with ambient lighting and cozy atmosphere.',
-      imageUrl: 'http://myapp.hookahhabibi.co.id/uploads/location_images/Zp5A9QkFfp6nN0Rr.png',
-      isSelected: true,
-    ),
-    HHLocationCardModel(
-      id: '3',
-      title: 'Garden Oasis Lounge',
-      subtitle: 'Relax in our beautiful garden atmosphere with natural surroundings and the best hookah experience in town. Perfect for groups and celebrations.',
-      imageUrl: 'https://example.com/location3.jpg',
-      isSelected: false,
-    ),
-    HHLocationCardModel(
-      id: '4',
-      title: 'VIP Elite Lounge',
-      subtitle: 'Exclusive premium hookah experience with private seating areas, personalized service, and our finest tobacco collection for discerning customers.',
-      imageUrl: 'https://example.com/location4.jpg',
-      isSelected: false,
-    ),
-    HHLocationCardModel(
-      id: '5',
-      title: 'Beachside Retreat',
-      subtitle: 'Oceanfront hookah lounge with stunning beach views, tropical vibes, and refreshing sea breeze. The perfect spot for a relaxing hookah session.',
-      imageUrl: 'https://example.com/location5.jpg',
-      isSelected: false,
-    ),
-    HHLocationCardModel(
-      id: '6',
-      title: 'Traditional Arabian Tent',
-      subtitle: 'Authentic middle eastern experience with traditional decor, authentic hookah preparations, and cultural ambiance that transports you to Arabia.',
-      imageUrl: 'https://example.com/location6.jpg',
-      isSelected: false,
-    ),
-  ];
+  final HHAppManager _appManager = HHAppManager();
+  List<HHLocationCardModel> _displayLocations = [];
+  String? _selectedLocationId;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLocations();
+  }
+
+  Future<void> _loadLocations() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    // Locations should already be loaded from login
+    // But we can reload if needed
+    if (_appManager.locationManager.locations.isEmpty) {
+      await _appManager.locationManager.loadLocations();
+    }
+
+    // Convert API locations to UI models
+    final apiLocations = _appManager.locationManager.locations;
+    _displayLocations = apiLocations.map((location) {
+      return HHLocationCardModel(
+        id: location.id,
+        title: location.title,
+        subtitle: location.address,
+        imageUrl: location.image,
+        isSelected: false,
+      );
+    }).toList();
+
+    // Select first location by default
+    if (_displayLocations.isNotEmpty) {
+      _displayLocations[0] = _displayLocations[0].copyWith(isSelected: true);
+      _selectedLocationId = _displayLocations[0].id;
+    }
+
+    setState(() {
+      _isLoading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.colorBlack,
-      body: Row(
+      body: _isLoading
+          ? _buildLoadingScreen()
+          : Row(
         children: [
           _buildLeftSide(),
           _buildRightSide(),
         ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingScreen() {
+    return const Center(
+      child: CircularProgressIndicator(
+        valueColor: AlwaysStoppedAnimation<Color>(AppColors.colorECC16E),
       ),
     );
   }
@@ -163,6 +174,17 @@ class _HHLocationScreenState extends State<HHLocationScreen> {
   }
 
   Widget _buildLocationsList() {
+    if (_displayLocations.isEmpty) {
+      return Expanded(
+        child: Center(
+          child: AppText(
+            text: 'No locations available',
+            appTextStyle: AppTextStyle.jostMedium16Gray,
+          ),
+        ),
+      );
+    }
+
     return Expanded(
       child: Container(
         constraints: const BoxConstraints(
@@ -170,25 +192,25 @@ class _HHLocationScreenState extends State<HHLocationScreen> {
         ),
         child: ListView.separated(
           shrinkWrap: true,
-          itemCount: locations.length,
+          itemCount: _displayLocations.length,
           separatorBuilder: (context, index) => const SizedBox(height: Dimens.margin16),
           itemBuilder: (context, index) {
             return HHLocationCard(
-              location: locations[index],
+              location: _displayLocations[index],
               onSelectionChanged: (location, isSelected) {
                 setState(() {
                   // Deselect all other locations
-                  for (int i = 0; i < locations.length; i++) {
-                    locations[i] = locations[i].copyWith(isSelected: false);
+                  for (int i = 0; i < _displayLocations.length; i++) {
+                    _displayLocations[i] = _displayLocations[i].copyWith(isSelected: false);
                   }
                   // Select the current location
-                  locations[index] = location.copyWith(isSelected: isSelected);
+                  _displayLocations[index] = location.copyWith(isSelected: isSelected);
+                  _selectedLocationId = location.id;
                 });
               },
               onTap: (location) {
                 print('Location tapped: ${location.title}');
                 print('Location ID: ${location.id}');
-                print('Location data: ${location.toString()}');
               },
             );
           },
@@ -214,23 +236,65 @@ class _HHLocationScreenState extends State<HHLocationScreen> {
     );
   }
 
-  void _handleContinue() {
-    // Find selected location
-    final selectedLocation = locations.firstWhere(
-          (location) => location.isSelected,
-      orElse: () => locations.first,
+  Future<void> _handleContinue() async {
+    if (_selectedLocationId == null) {
+      _showSnackBar('Please select a location');
+      return;
+    }
+
+    // Show loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(AppColors.colorECC16E),
+        ),
+      ),
     );
 
-    print('Continue pressed with selected location: ${selectedLocation.title}');
+    // Select location in app manager
+    final success = await _appManager.selectLocation(_selectedLocationId!);
 
-    // Navigate to Menu Screen with selected location data
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => HHWelcome(
-          locationName: selectedLocation.title,
-          locationId: selectedLocation.id,
-        ),
+    // Hide loading
+    if (mounted) {
+      Navigator.pop(context);
+    }
+
+    if (success) {
+      // Get selected location details
+      final selectedLocation = _displayLocations.firstWhere(
+            (location) => location.isSelected,
+        orElse: () => _displayLocations.first,
+      );
+
+      print('Continue pressed with selected location: ${selectedLocation.title}');
+
+      // Navigate to Welcome Screen with selected location data
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => HHWelcome(
+              locationName: selectedLocation.title,
+              locationId: selectedLocation.id,
+            ),
+          ),
+        );
+      }
+    } else {
+      _showSnackBar('Failed to select location');
+    }
+  }
+
+  void _showSnackBar(String message) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppColors.colorBD7D28,
+        duration: const Duration(seconds: 2),
       ),
     );
   }

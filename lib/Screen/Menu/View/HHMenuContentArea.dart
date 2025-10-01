@@ -1,18 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:hookahhabibi/Managers/HHAppManager.dart';
+import 'package:hookahhabibi/Screen/Menu/Model/HHDishCategoryModel.dart';
 import 'package:hookahhabibi/Screen/Menu/Model/HHDishModel.dart';
 import 'package:hookahhabibi/Screen/Menu/View/HHDishCard.dart';
 import 'package:hookahhabibi/utils/AppText.dart';
 import 'package:hookahhabibi/utils/AppTextStyle.dart';
 import 'package:hookahhabibi/utils/app_colors.dart';
 import 'package:hookahhabibi/utils/app_dimens.dart';
-import 'package:hookahhabibi/utils/app_images.dart';
 
 class HHMenuContentArea extends StatefulWidget {
   final bool isMenuOpen;
+  final String? selectedCategoryId;
 
   const HHMenuContentArea({
     Key? key,
     this.isMenuOpen = true,
+    this.selectedCategoryId,
   }) : super(key: key);
 
   @override
@@ -23,153 +26,63 @@ class _HHMenuContentAreaState extends State<HHMenuContentArea> {
   final ScrollController _offersScrollController = ScrollController();
   final ScrollController _tagsScrollController = ScrollController();
   final ScrollController _mainScrollController = ScrollController();
+  final HHAppManager _appManager = HHAppManager();
 
   String? selectedTag;
-
-  // Dummy data for special offers
-  final List<String> specialOffers = [
-    APPImages.temp1,
-    APPImages.temp2,
-    APPImages.temp3,
-    APPImages.temp1,
-    APPImages.temp2,
-    APPImages.temp1,
-    APPImages.temp2,
-    APPImages.temp3,
-    APPImages.temp1,
-    APPImages.temp2,
-  ];
-
-  // Dummy data for menu tags
-  final List<String> menuTags = [
-    'Indian',
-    'Chinese',
-    'Italian',
-    'Mexican',
-    'Thai',
-    'Japanese',
-    'Mediterranean',
-  ];
-
-  // Dummy data for dishes
-  final List<HHDishModel> dishes = [
-    HHDishModel(
-      id: '1',
-      name: 'Butter Chicken',
-      description: 'Tender chicken pieces in a rich, creamy tomato-based curry sauce with aromatic spices',
-      price: 'IDR 85,000',
-      imageUrl: 'https://example.com/butter-chicken.jpg',
-      isSpicy: true,
-      isVegetarian: false,
-      isAvailable: true,
-      category: 'Indian',
-    ),
-    HHDishModel(
-      id: '2',
-      name: 'Paneer Tikka Masala',
-      description: 'Grilled cottage cheese cubes in a flavorful spiced gravy with bell peppers and onions',
-      price: 'IDR 75,000',
-      imageUrl: 'https://example.com/paneer-tikka.jpg',
-      isSpicy: true,
-      isVegetarian: true,
-      isAvailable: false,
-      category: 'Indian',
-    ),
-    HHDishModel(
-      id: '3',
-      name: 'Biryani Special',
-      description: 'Fragrant basmati rice layered with tender meat, aromatic spices, and saffron',
-      price: 'IDR 95,000',
-      imageUrl: 'https://example.com/biryani.jpg',
-      isSpicy: false,
-      isVegetarian: false,
-      isAvailable: true,
-      category: 'Indian',
-    ),
-    HHDishModel(
-      id: '4',
-      name: 'Dal Makhani',
-      description: 'Creamy black lentils slow-cooked with butter, cream, and aromatic spices',
-      price: 'IDR 65,000',
-      imageUrl: 'https://example.com/dal-makhani.jpg',
-      isSpicy: false,
-      isVegetarian: true,
-      isAvailable: true,
-      category: 'Indian',
-    ),
-    HHDishModel(
-      id: '5',
-      name: 'Tandoori Chicken',
-      description: 'Succulent chicken marinated in yogurt and spices, cooked in a traditional clay oven',
-      price: 'IDR 90,000',
-      imageUrl: 'https://example.com/tandoori.jpg',
-      isSpicy: true,
-      isVegetarian: false,
-      isAvailable: false,
-      category: 'Indian',
-    ),
-    HHDishModel(
-      id: '6',
-      name: 'Palak Paneer',
-      description: 'Fresh cottage cheese cubes in a smooth spinach gravy with aromatic Indian spices',
-      price: 'IDR 70,000',
-      imageUrl: 'https://example.com/palak-paneer.jpg',
-      isSpicy: false,
-      isVegetarian: true,
-      isAvailable: true,
-      category: 'Indian',
-    ),
-    HHDishModel(
-      id: '7',
-      name: 'Garlic Naan',
-      description: 'Soft, fluffy bread topped with garlic and butter, baked fresh in tandoor',
-      price: 'IDR 25,000',
-      imageUrl: 'https://example.com/garlic-naan.jpg',
-      isSpicy: false,
-      isVegetarian: true,
-      isAvailable: true,
-      category: 'Indian',
-    ),
-    HHDishModel(
-      id: '8',
-      name: 'Chicken Korma',
-      description: 'Mild, creamy curry with tender chicken, cashews, and fragrant spices',
-      price: 'IDR 85,000',
-      imageUrl: 'https://example.com/korma.jpg',
-      isSpicy: false,
-      isVegetarian: false,
-      isAvailable: true,
-      category: 'Indian',
-    ),
-    HHDishModel(
-      id: '9',
-      name: 'Rogan Josh',
-      description: 'Aromatic lamb curry with rich spices and a deep red color from Kashmiri chilies',
-      price: 'IDR 110,000',
-      imageUrl: 'https://example.com/rogan-josh.jpg',
-      isSpicy: true,
-      isVegetarian: false,
-      isAvailable: true,
-      category: 'Indian',
-    ),
-    HHDishModel(
-      id: '10',
-      name: 'Malai Kofta',
-      description: 'Soft cottage cheese and potato dumplings in a rich, creamy tomato-cashew gravy',
-      price: 'IDR 78,000',
-      imageUrl: 'https://example.com/malai-kofta.jpg',
-      isSpicy: false,
-      isVegetarian: true,
-      isAvailable: false,
-      category: 'Indian',
-    ),
-  ];
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    // Set first tag as selected by default
-    selectedTag = menuTags.first;
+    _loadData();
+  }
+
+  @override
+  void didUpdateWidget(HHMenuContentArea oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.selectedCategoryId != oldWidget.selectedCategoryId) {
+      // Reset selected tag when category changes
+      selectedTag = null;
+      _loadDishes();
+    }
+  }
+
+  Future<void> _loadData() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    // Load offers
+    await _appManager.menuManager.loadOffers();
+
+    // Load dishes if category is selected
+    if (widget.selectedCategoryId != null) {
+      await _loadDishes();
+    }
+
+    setState(() {
+      _isLoading = false;
+    });
+  }
+
+  Future<void> _loadDishes() async {
+    if (widget.selectedCategoryId == null) return;
+
+    await _appManager.menuManager.loadDishes(
+      categoryId: widget.selectedCategoryId!,
+    );
+
+    // Set first subcategory as selected by default
+    final subCategories = _appManager.menuManager.getSubCategories();
+    if (subCategories.isNotEmpty) {
+      setState(() {
+        selectedTag = subCategories.first.id;
+      });
+    } else {
+      setState(() {
+        selectedTag = null;
+      });
+    }
   }
 
   @override
@@ -180,14 +93,48 @@ class _HHMenuContentAreaState extends State<HHMenuContentArea> {
     super.dispose();
   }
 
-  // Get filtered dishes based on selected tag
   List<HHDishModel> get filteredDishes {
-    if (selectedTag == null) return dishes;
-    return dishes.where((dish) => dish.category == selectedTag).toList();
+    final apiDishes = _appManager.menuManager.getDisplayDishes();
+    final locationManager = _appManager.locationManager;
+
+    // Convert API dishes to UI models and filter by availability
+    return apiDishes.where((dish) {
+      // Filter by selected subcategory tag
+      if (selectedTag != null && dish.dishCatId != selectedTag) {
+        return false;
+      }
+
+      // Check if dish is available at selected location
+      return locationManager.isDishAvailable(dish.id);
+    }).map((apiDish) {
+      return HHDishModel(
+        id: apiDish.id,
+        name: apiDish.title,
+        description: apiDish.description,
+        price: apiDish.formattedPrice,
+        imageUrl: apiDish.image,
+        isSpicy: apiDish.isSpicy,
+        isVegetarian: apiDish.isVegetarian,
+        isAvailable: apiDish.isAvailable,
+        category: apiDish.dishCatId,
+      );
+    }).toList();
+  }
+
+  List<HHDishCategoryModel> get menuTags {
+    return _appManager.menuManager.getSubCategories();
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(AppColors.colorECC16E),
+        ),
+      );
+    }
+
     return Container(
       color: Colors.transparent,
       child: SingleChildScrollView(
@@ -199,8 +146,8 @@ class _HHMenuContentAreaState extends State<HHMenuContentArea> {
             children: [
               _buildSpecialOffersTitle(),
               _buildSpecialOffersSection(),
-              _buildMenuTagsSection(),
-              _buildSeparatorWithText(),
+              if (menuTags.isNotEmpty) _buildMenuTagsSection(),
+              if (menuTags.isNotEmpty) _buildSeparatorWithText(),
               _buildDishesGrid(),
               SizedBox(height: Dimens.margin40),
             ],
@@ -228,6 +175,12 @@ class _HHMenuContentAreaState extends State<HHMenuContentArea> {
   }
 
   Widget _buildSpecialOffersSection() {
+    final offers = _appManager.menuManager.offers;
+
+    if (offers.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     return Container(
       height: Dimens.margin160,
       margin: const EdgeInsets.only(
@@ -238,20 +191,19 @@ class _HHMenuContentAreaState extends State<HHMenuContentArea> {
         controller: _offersScrollController,
         scrollDirection: Axis.horizontal,
         physics: const BouncingScrollPhysics(),
-        itemCount: specialOffers.length,
+        itemCount: offers.length,
         separatorBuilder: (context, index) => const SizedBox(width: Dimens.margin20),
         itemBuilder: (context, index) {
-          return _buildOfferCard(specialOffers[index]);
+          return _buildOfferCard(offers[index].image);
         },
       ),
     );
   }
 
-  Widget _buildOfferCard(String imagePath) {
+  Widget _buildOfferCard(String imageUrl) {
     return GestureDetector(
       onTap: () {
-        print('Offer tapped: $imagePath');
-        // Handle offer tap
+        print('Offer tapped: $imageUrl');
       },
       child: Container(
         width: Dimens.margin420,
@@ -268,19 +220,25 @@ class _HHMenuContentAreaState extends State<HHMenuContentArea> {
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(Dimens.margin10),
-          child: Image.asset(
-            imagePath,
+          child: Image.network(
+            imageUrl,
             width: Dimens.margin420,
             height: Dimens.margin160,
             fit: BoxFit.cover,
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return Container(
+                color: AppColors.color949494.withOpacity(0.3),
+                child: const Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.colorECC16E),
+                  ),
+                ),
+              );
+            },
             errorBuilder: (context, error, stackTrace) {
               return Container(
-                width: Dimens.margin420,
-                height: Dimens.margin160,
-                decoration: BoxDecoration(
-                  color: AppColors.color949494.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(Dimens.margin10),
-                ),
+                color: AppColors.color949494.withOpacity(0.3),
                 child: const Center(
                   child: Icon(
                     Icons.local_offer,
@@ -328,15 +286,15 @@ class _HHMenuContentAreaState extends State<HHMenuContentArea> {
     );
   }
 
-  Widget _buildMenuTag(String tag) {
-    final isSelected = selectedTag == tag;
+  Widget _buildMenuTag(HHDishCategoryModel tag) {
+    final isSelected = selectedTag == tag.id;
 
     return GestureDetector(
       onTap: () {
         setState(() {
-          selectedTag = tag;
+          selectedTag = tag.id;
         });
-        print('Selected tag: $tag');
+        print('Selected tag: ${tag.title}');
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
@@ -348,19 +306,19 @@ class _HHMenuContentAreaState extends State<HHMenuContentArea> {
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.colorECC16E
-              : const Color(0x1AD9D9D9), // #D9D9D91A
+              : const Color(0x1AD9D9D9),
           borderRadius: BorderRadius.circular(Dimens.margin50),
         ),
         child: Center(
           child: AppText(
-            text: tag.toUpperCase(),
+            text: tag.title.toUpperCase(),
             appTextStyle: AppTextStyle.oswaldMedium22OffWhite,
             customColor: isSelected
                 ? AppColors.color00541A
                 : AppColors.colorD9D9D9,
             customFontSize: Dimens.textSize20,
             textAlign: TextAlign.center,
-            applyTextTransform: true,
+            applyTextTransform: false,
           ),
         ),
       ),
@@ -368,6 +326,13 @@ class _HHMenuContentAreaState extends State<HHMenuContentArea> {
   }
 
   Widget _buildSeparatorWithText() {
+    final selectedTagName = menuTags
+        .firstWhere(
+          (tag) => tag.id == selectedTag,
+      orElse: () => menuTags.first,
+    )
+        .title;
+
     return Container(
       margin: const EdgeInsets.only(
         top: Dimens.margin30,
@@ -376,18 +341,16 @@ class _HHMenuContentAreaState extends State<HHMenuContentArea> {
       ),
       child: Row(
         children: [
-          // Left line
           Expanded(
             child: Container(
               height: Dimens.margin1,
               color: AppColors.color33FFFF,
             ),
           ),
-          // Center text with padding
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: Dimens.margin20),
             child: AppText(
-              text: selectedTag?.toUpperCase() ?? '',
+              text: selectedTagName.toUpperCase(),
               appTextStyle: AppTextStyle.oswaldMedium22OffWhite,
               customFontSize: Dimens.textSize20,
               customColor: AppColors.colorF4F5F7,
@@ -395,7 +358,6 @@ class _HHMenuContentAreaState extends State<HHMenuContentArea> {
               applyTextTransform: false,
             ),
           ),
-          // Right line
           Expanded(
             child: Container(
               height: Dimens.margin1,
@@ -408,6 +370,18 @@ class _HHMenuContentAreaState extends State<HHMenuContentArea> {
   }
 
   Widget _buildDishesGrid() {
+    if (filteredDishes.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.all(Dimens.margin40),
+        child: Center(
+          child: AppText(
+            text: 'No dishes available',
+            appTextStyle: AppTextStyle.jostMedium16Gray,
+          ),
+        ),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.only(
         top: Dimens.margin30,

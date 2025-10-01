@@ -22,6 +22,7 @@ class APPImages {
   static const imgStarters = '${imageBaseURL}img_starters.png';
   static const imgTea = '${imageBaseURL}img_tea.png';
   static const imgMenuListLogoMin = '${imageBaseURL}img_Menu_List_Logo_min.png';
+  static const icMenuBg = '${imageBaseURL}ic_menu_bg.png';
 
 
   //Menu screen
