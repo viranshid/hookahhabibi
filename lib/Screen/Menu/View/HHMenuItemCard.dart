@@ -12,6 +12,7 @@ class HHMenuItemCard extends StatelessWidget {
   final bool isExpanded;
   final bool isSelected;
   final bool isMenuOpen;
+  final bool isGoldenSaprator;
   final VoidCallback? onTap;
 
   const HHMenuItemCard({
@@ -21,13 +22,12 @@ class HHMenuItemCard extends StatelessWidget {
     this.isExpanded = false,
     this.isSelected = false,
     this.isMenuOpen = true,
+    this.isGoldenSaprator = false,
     this.onTap,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    print('HHMenuItemCard $title: isSelected = $isSelected, isMenuOpen = $isMenuOpen');
-
     return GestureDetector(
       onTap: onTap,
       child: Column(
@@ -68,7 +68,6 @@ class HHMenuItemCard extends StatelessWidget {
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          // If we don't have enough width, show as column instead
           if (constraints.maxWidth < 100) {
             return Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -80,7 +79,6 @@ class HHMenuItemCard extends StatelessWidget {
             );
           }
 
-          // Normal expanded row layout
           return Row(
             children: [
               _buildImage(),
@@ -113,7 +111,6 @@ class HHMenuItemCard extends StatelessWidget {
   }
 
   Widget _buildImage() {
-    // Check if imagePath is a URL or local asset
     final isUrl = imagePath.startsWith('http://') || imagePath.startsWith('https://');
 
     return RepaintBoundary(
@@ -126,7 +123,6 @@ class HHMenuItemCard extends StatelessWidget {
         child: Stack(
           alignment: Alignment.center,
           children: [
-            // Background image - always 70x70
             ClipRRect(
               borderRadius: BorderRadius.circular(Dimens.margin8),
               child: Image.asset(
@@ -146,13 +142,12 @@ class HHMenuItemCard extends StatelessWidget {
                 },
               ),
             ),
-            // Category icon - always 40x40
             if (isUrl)
               ClipRRect(
                 borderRadius: BorderRadius.circular(Dimens.margin6),
                 child: Image.network(
                   imagePath,
-                  key: ValueKey(imagePath), // Add key to maintain state
+                  key: ValueKey(imagePath),
                   width: Dimens.margin40,
                   height: Dimens.margin40,
                   fit: BoxFit.contain,
@@ -197,7 +192,7 @@ class HHMenuItemCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(Dimens.margin6),
                 child: Image.asset(
                   imagePath,
-                  key: ValueKey(imagePath), // Add key to maintain state
+                  key: ValueKey(imagePath),
                   width: Dimens.margin40,
                   height: Dimens.margin40,
                   fit: BoxFit.contain,
@@ -226,28 +221,39 @@ class HHMenuItemCard extends StatelessWidget {
   }
 
   Widget _buildText() {
-    return AppText(
-      text: title.toUpperCase(),
-      appTextStyle: AppTextStyle.oswaldRegular20UppercaseLight,
-      customColor: AppColors.colorECC16E,
+    // Use bold font weight when selected
+    return Text(
+      title.toUpperCase(),
+      style: TextStyle(
+        fontFamily: 'Oswald',
+        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400, // Bold when selected
+        fontSize: Dimens.textSize20,
+        height: 1.0,
+        letterSpacing: 0,
+        color: AppColors.colorECC16E,
+      ),
       maxLines: 2,
       overflow: TextOverflow.ellipsis,
       textAlign: TextAlign.left,
-      applyTextTransform: true,
     );
   }
 
   Widget _buildCollapsedText() {
     return SizedBox(
       width: Dimens.margin80,
-      child: AppText(
-        text: title.toUpperCase(),
-        appTextStyle: AppTextStyle.oswaldRegular14UppercaseLight,
-        customColor: AppColors.colorECC16E,
+      child: Text(
+        title.toUpperCase(),
+        style: TextStyle(
+          fontFamily: 'Oswald',
+          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400, // Bold when selected
+          fontSize: Dimens.textSize14,
+          height: 18 / 14,
+          letterSpacing: 0,
+          color: AppColors.colorECC16E,
+        ),
         maxLines: 3,
         overflow: TextOverflow.ellipsis,
         textAlign: TextAlign.center,
-        applyTextTransform: true,
       ),
     );
   }
@@ -262,7 +268,7 @@ class HHMenuItemCard extends StatelessWidget {
       ),
       child: CustomPaint(
         painter: DashedLinePainter(
-          color: AppColors.color33FFFF,
+          color: isGoldenSaprator ? AppColors.colorBD7D28 : AppColors.color33FFFF,
           strokeWidth: 1.0,
           dashLength: 3.0,
           gapLength: 3.0,

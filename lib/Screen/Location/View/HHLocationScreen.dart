@@ -23,26 +23,63 @@ class _HHLocationScreenState extends State<HHLocationScreen> {
   List<HHLocationCardModel> _displayLocations = [];
   String? _selectedLocationId;
   bool _isLoading = true;
+  String? _errorMessage;
+  int _loadAttempts = 0;
 
   @override
   void initState() {
     super.initState();
+    print('\n🏠 LOCATION SCREEN: Initialized');
     _loadLocations();
   }
 
   Future<void> _loadLocations() async {
-    setState(() {
-      _isLoading = true;
-    });
+    print('\n🏠 LOCATION SCREEN: Loading locations');
+    print('   Load Attempts: $_loadAttempts');
 
-    // Locations should already be loaded from login
-    // But we can reload if needed
-    if (_appManager.locationManager.locations.isEmpty) {
-      await _appManager.locationManager.loadLocations();
+    if (!mounted) {
+      print('   ⚠️  Widget not mounted, cancelling load');
+      return;
     }
 
-    // Convert API locations to UI models
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    _loadAttempts++;
+
+    // Check if locations are already loaded
+    if (_appManager.locationManager.locations.isEmpty) {
+      print('   📡 No locations in manager, loading from API...');
+      final success = await _appManager.locationManager.loadLocations();
+
+      if (!success) {
+        print('   ❌ Failed to load locations from API');
+
+        if (!mounted) return;
+
+        setState(() {
+          _errorMessage = _appManager.locationManager.error ?? 'Failed to load locations';
+          _isLoading = false;
+        });
+
+        // Show error dialog
+        _showErrorDialog();
+        return;
+      }
+
+      print('   ✅ Locations loaded successfully from API');
+    } else {
+      print('   ✅ Using cached locations (${_appManager.locationManager.locations.length} locations)');
+    }
+
+    if (!mounted) return;
+
     final apiLocations = _appManager.locationManager.locations;
+
+    print('   🔄 Converting ${apiLocations.length} API locations to display format');
+
     _displayLocations = apiLocations.map((location) {
       return HHLocationCardModel(
         id: location.id,
@@ -53,15 +90,72 @@ class _HHLocationScreenState extends State<HHLocationScreen> {
       );
     }).toList();
 
-    // Select first location by default
+    print('   ✅ Converted ${_displayLocations.length} locations');
+
+    // Auto-select first location
     if (_displayLocations.isNotEmpty) {
       _displayLocations[0] = _displayLocations[0].copyWith(isSelected: true);
       _selectedLocationId = _displayLocations[0].id;
+      print('   ✅ Auto-selected first location: ${_displayLocations[0].title}');
+    } else {
+      print('   ⚠️  No locations to display!');
+      _errorMessage = 'No locations available';
     }
+
+    if (!mounted) return;
 
     setState(() {
       _isLoading = false;
     });
+
+    print('   ✅ Location screen ready');
+  }
+
+  void _showErrorDialog() {
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF171717),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(Dimens.margin10),
+        ),
+        title: const Text(
+          'Error Loading Locations',
+          style: TextStyle(
+            color: AppColors.colorFFFFFF,
+            fontFamily: 'Oswald',
+            fontSize: 24,
+          ),
+        ),
+        content: Text(
+          _errorMessage ?? 'Failed to load locations. Please check your connection and try again.',
+          style: const TextStyle(
+            color: AppColors.color949494,
+            fontFamily: 'Rubik',
+            fontSize: 16,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              if (_loadAttempts < 3) {
+                _loadLocations();
+              } else {
+                Navigator.pop(context); // Go back to previous screen
+              }
+            },
+            child: Text(
+              _loadAttempts < 3 ? 'Retry' : 'Go Back',
+              style: const TextStyle(color: AppColors.colorECC16E),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -70,6 +164,8 @@ class _HHLocationScreenState extends State<HHLocationScreen> {
       backgroundColor: AppColors.colorBlack,
       body: _isLoading
           ? _buildLoadingScreen()
+          : _displayLocations.isEmpty
+          ? _buildEmptyState()
           : Row(
         children: [
           _buildLeftSide(),
@@ -80,9 +176,56 @@ class _HHLocationScreenState extends State<HHLocationScreen> {
   }
 
   Widget _buildLoadingScreen() {
-    return const Center(
-      child: CircularProgressIndicator(
-        valueColor: AlwaysStoppedAnimation<Color>(AppColors.colorECC16E),
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.colorECC16E),
+          ),
+          const SizedBox(height: Dimens.margin20),
+          AppText(
+            text: 'Loading locations...',
+            appTextStyle: AppTextStyle.jostMedium16Gray,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.location_off,
+            size: 64,
+            color: AppColors.color949494,
+          ),
+          const SizedBox(height: Dimens.margin20),
+          AppText(
+            text: 'No locations available',
+            appTextStyle: AppTextStyle.jostBold26Heading,
+          ),
+          const SizedBox(height: Dimens.margin10),
+          AppText(
+            text: _errorMessage ?? 'Please try again later',
+            appTextStyle: AppTextStyle.jostMedium16Gray,
+          ),
+          const SizedBox(height: Dimens.margin30),
+          SizedBox(
+            width: Dimens.margin200,
+            child: HHButton(
+              text: 'Retry',
+              type: HHButtonType.normal,
+              onPressed: () {
+                _loadAttempts = 0;
+                _loadLocations();
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -174,17 +317,6 @@ class _HHLocationScreenState extends State<HHLocationScreen> {
   }
 
   Widget _buildLocationsList() {
-    if (_displayLocations.isEmpty) {
-      return Expanded(
-        child: Center(
-          child: AppText(
-            text: 'No locations available',
-            appTextStyle: AppTextStyle.jostMedium16Gray,
-          ),
-        ),
-      );
-    }
-
     return Expanded(
       child: Container(
         constraints: const BoxConstraints(
@@ -198,6 +330,9 @@ class _HHLocationScreenState extends State<HHLocationScreen> {
             return HHLocationCard(
               location: _displayLocations[index],
               onSelectionChanged: (location, isSelected) {
+                print('\n📍 Location selection changed: ${location.title}');
+                print('   Is Selected: $isSelected');
+
                 setState(() {
                   // Deselect all other locations
                   for (int i = 0; i < _displayLocations.length; i++) {
@@ -206,11 +341,12 @@ class _HHLocationScreenState extends State<HHLocationScreen> {
                   // Select the current location
                   _displayLocations[index] = location.copyWith(isSelected: isSelected);
                   _selectedLocationId = location.id;
+
+                  print('   ✅ Selected Location ID: $_selectedLocationId');
                 });
               },
               onTap: (location) {
-                print('Location tapped: ${location.title}');
-                print('Location ID: ${location.id}');
+                print('   👆 Location tapped: ${location.title} (${location.id})');
               },
             );
           },
@@ -237,10 +373,15 @@ class _HHLocationScreenState extends State<HHLocationScreen> {
   }
 
   Future<void> _handleContinue() async {
+    print('\n➡️  Continue button pressed');
+
     if (_selectedLocationId == null) {
+      print('   ⚠️  No location selected');
       _showSnackBar('Please select a location');
       return;
     }
+
+    print('   ✅ Selected Location ID: $_selectedLocationId');
 
     // Show loading
     showDialog(
@@ -254,6 +395,7 @@ class _HHLocationScreenState extends State<HHLocationScreen> {
     );
 
     // Select location in app manager
+    print('   🔄 Selecting location in app manager...');
     final success = await _appManager.selectLocation(_selectedLocationId!);
 
     // Hide loading
@@ -262,13 +404,17 @@ class _HHLocationScreenState extends State<HHLocationScreen> {
     }
 
     if (success) {
+      print('   ✅ Location selected successfully in app manager');
+
       // Get selected location details
       final selectedLocation = _displayLocations.firstWhere(
             (location) => location.isSelected,
         orElse: () => _displayLocations.first,
       );
 
-      print('Continue pressed with selected location: ${selectedLocation.title}');
+      print('   🎉 Navigating to Welcome Screen');
+      print('   Location: ${selectedLocation.title}');
+      print('   Location ID: ${selectedLocation.id}');
 
       // Navigate to Welcome Screen with selected location data
       if (mounted) {
@@ -283,12 +429,16 @@ class _HHLocationScreenState extends State<HHLocationScreen> {
         );
       }
     } else {
-      _showSnackBar('Failed to select location');
+      print('   ❌ Failed to select location in app manager');
+      print('   Error: ${_appManager.error}');
+      _showSnackBar(_appManager.error ?? 'Failed to select location');
     }
   }
 
   void _showSnackBar(String message) {
     if (!mounted) return;
+
+    print('   💬 Showing snackbar: $message');
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

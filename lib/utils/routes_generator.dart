@@ -4,57 +4,179 @@ import 'package:hookahhabibi/Screen/SplashScreen.dart';
 import 'package:hookahhabibi/Screen/Login/HHLogin.dart';
 import 'package:hookahhabibi/Screen/Welcom/View/HHWelcom.dart';
 import 'package:hookahhabibi/utils/app_routes.dart';
+import 'package:hookahhabibi/utils/CustomPageRoute.dart';
 
-/// > RouteGenerator is a class that generates routes for the application
+/// RouteGenerator with smooth animations
 class RouteGenerator {
   static Route<dynamic> generateRoute(RouteSettings settings) {
     print("Generating route for: ${settings.name}");
-    // printWrapped('\x1B[32m${'Navigating to ----> ${settings.name}'}\x1B[0m');
-    // ignore: unused_local_variable
     final args = settings.arguments;
+
     switch (settings.name) {
       case AppRoutes.routesSplash:
-        return MaterialPageRoute(
-            builder: (_) => const SplashScreen(),
-            settings: const RouteSettings(name: AppRoutes.routesSplash));
+        return FadePageRouteBuilder(
+          builder: (_) => const SplashScreen(),
+        );
 
       case AppRoutes.routesLogin:
-        return MaterialPageRoute(
-            builder: (_) => const HHLogin(),
-            settings: const RouteSettings(name: AppRoutes.routesLogin));
+        return FadePageRouteBuilder(
+          builder: (_) => const HHLogin(),
+        );
 
       case AppRoutes.routesWelcome:
-        return MaterialPageRoute(
-            builder: (_) => const HHWelcome(),
-            settings: const RouteSettings(name: AppRoutes.routesWelcome));
+        return CustomPageRouteBuilder(
+          builder: (_) => const HHWelcome(),
+        );
 
       case AppRoutes.routesLocation:
-        return MaterialPageRoute(
-            builder: (_) => const HHLocationScreen(),
-            settings: const RouteSettings(name: AppRoutes.routesLocation));
+        return ScalePageRouteBuilder(
+          builder: (_) => const HHLocationScreen(),
+        );
 
       default:
-        return MaterialPageRoute(
-            builder: (_) => const SplashScreen(),
-            settings: const RouteSettings(name: AppRoutes.routesSplash));
+        return FadePageRouteBuilder(
+          builder: (_) => const SplashScreen(),
+        );
     }
   }
 
-  /// If the current route is the home route, return the home route name, otherwise
-  /// return the route name of the current route.
-  ///
-  /// Args:
-  ///   context (BuildContext): The current context of the app.
+  /// Get current route name
   static String getRouteName(BuildContext context) {
     return ModalRoute.of(context)?.settings.name ?? '';
   }
-// static logoutClearData(BuildContext context) {
-//   String? tmp = PreferenceHelper.getString(PreferenceHelper.fcmToken) ??
-//       PreferenceHelper.fcmToken;
-//   PreferenceHelper.clear();
-//   PreferenceHelper.setString(PreferenceHelper.fcmToken, tmp);
-//   tmp = null;
-//   Navigator.pushNamedAndRemoveUntil(
-//       context, AppRoutes.routesLogin, (route) => false);
-// }
+
+  /// Navigate with custom animation
+  static Future<T?> navigateWithAnimation<T>(
+      BuildContext context,
+      Widget page, {
+        AnimationType animationType = AnimationType.slide,
+      }) {
+    PageRouteBuilder<T> route;
+
+    switch (animationType) {
+      case AnimationType.fade:
+        route = PageRouteBuilder<T>(
+          pageBuilder: (context, animation, secondaryAnimation) => page,
+          transitionDuration: const Duration(milliseconds: 300),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(opacity: animation, child: child);
+          },
+        );
+        break;
+
+      case AnimationType.scale:
+        route = PageRouteBuilder<T>(
+          pageBuilder: (context, animation, secondaryAnimation) => page,
+          transitionDuration: const Duration(milliseconds: 400),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            var scaleAnimation = Tween<double>(begin: 0.85, end: 1.0).animate(
+              CurvedAnimation(parent: animation, curve: Curves.easeInOutCubic),
+            );
+            var fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+              CurvedAnimation(parent: animation, curve: Curves.easeInOutCubic),
+            );
+            return ScaleTransition(
+              scale: scaleAnimation,
+              child: FadeTransition(opacity: fadeAnimation, child: child),
+            );
+          },
+        );
+        break;
+
+      case AnimationType.slideFromRight:
+        route = PageRouteBuilder<T>(
+          pageBuilder: (context, animation, secondaryAnimation) => page,
+          transitionDuration: const Duration(milliseconds: 400),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            var tween = Tween<Offset>(
+              begin: const Offset(1.0, 0.0),
+              end: Offset.zero,
+            ).chain(CurveTween(curve: Curves.easeInOutCubic));
+            return SlideTransition(
+              position: animation.drive(tween),
+              child: child,
+            );
+          },
+        );
+        break;
+
+      case AnimationType.slide:
+      default:
+        route = PageRouteBuilder<T>(
+          pageBuilder: (context, animation, secondaryAnimation) => page,
+          transitionDuration: const Duration(milliseconds: 400),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            var tween = Tween<Offset>(
+              begin: const Offset(-1.0, 0.0),
+              end: Offset.zero,
+            ).chain(CurveTween(curve: Curves.easeInOutCubic));
+            var fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+              CurvedAnimation(
+                parent: animation,
+                curve: const Interval(0.0, 0.6, curve: Curves.easeIn),
+              ),
+            );
+            return SlideTransition(
+              position: animation.drive(tween),
+              child: FadeTransition(opacity: fadeAnimation, child: child),
+            );
+          },
+        );
+    }
+
+    return Navigator.push<T>(context, route);
+  }
+
+  /// Navigate and replace with animation
+  static Future<T?> navigateAndReplaceWithAnimation<T>(
+      BuildContext context,
+      Widget page, {
+        AnimationType animationType = AnimationType.fade,
+      }) {
+    PageRouteBuilder<T> route;
+
+    switch (animationType) {
+      case AnimationType.fade:
+        route = PageRouteBuilder<T>(
+          pageBuilder: (context, animation, secondaryAnimation) => page,
+          transitionDuration: const Duration(milliseconds: 300),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(opacity: animation, child: child);
+          },
+        );
+        break;
+
+      case AnimationType.scale:
+        route = PageRouteBuilder<T>(
+          pageBuilder: (context, animation, secondaryAnimation) => page,
+          transitionDuration: const Duration(milliseconds: 400),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            var scaleAnimation = Tween<double>(begin: 0.85, end: 1.0).animate(
+              CurvedAnimation(parent: animation, curve: Curves.easeInOutCubic),
+            );
+            return ScaleTransition(scale: scaleAnimation, child: child);
+          },
+        );
+        break;
+
+      default:
+        route = PageRouteBuilder<T>(
+          pageBuilder: (context, animation, secondaryAnimation) => page,
+          transitionDuration: const Duration(milliseconds: 400),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(opacity: animation, child: child);
+          },
+        );
+    }
+
+    return Navigator.pushReplacement<T, void>(context, route);
+  }
+}
+
+/// Animation types for navigation
+enum AnimationType {
+  fade,
+  slide,
+  slideFromRight,
+  scale,
 }

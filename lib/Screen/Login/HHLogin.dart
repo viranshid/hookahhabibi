@@ -9,6 +9,7 @@ import 'package:hookahhabibi/utils/app_colors.dart';
 import 'package:hookahhabibi/utils/app_dimens.dart';
 import 'package:hookahhabibi/utils/app_images.dart';
 import 'package:hookahhabibi/utils/app_Strings.dart';
+import 'package:hookahhabibi/utils/routes_generator.dart';
 import 'package:hookahhabibi/widgets/HHTextField.dart';
 import 'package:hookahhabibi/widgets/HHButton.dart';
 
@@ -19,7 +20,8 @@ class HHLogin extends StatefulWidget {
   State<HHLogin> createState() => _HHLoginState();
 }
 
-class _HHLoginState extends State<HHLogin> with KeyboardHandlingMixin {
+class _HHLoginState extends State<HHLogin>
+    with KeyboardHandlingMixin, TickerProviderStateMixin {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final FocusNode _emailFocusNode = FocusNode();
@@ -28,6 +30,11 @@ class _HHLoginState extends State<HHLogin> with KeyboardHandlingMixin {
 
   bool _isLoading = false;
 
+  late AnimationController _fadeController;
+  late AnimationController _slideController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
   @override
   void initState() {
     super.initState();
@@ -35,9 +42,41 @@ class _HHLoginState extends State<HHLogin> with KeyboardHandlingMixin {
     addFocusNode(_emailFocusNode);
     addFocusNode(_passwordFocusNode);
 
+    // Setup animations
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+
+    _slideController = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _fadeController,
+        curve: const Interval(0.0, 0.7, curve: Curves.easeIn),
+      ),
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: _slideController,
+        curve: Curves.easeOutCubic,
+      ),
+    );
+
+    // Start animations
+    _fadeController.forward();
+    _slideController.forward();
+
     // For testing, pre-fill credentials
-    _emailController.text = 'mt11@example.com';
-    _passwordController.text = 'Test@123';
+    // _emailController.text = 'mt11@example.com';
+    // _passwordController.text = 'Test@123';
   }
 
   @override
@@ -46,6 +85,8 @@ class _HHLoginState extends State<HHLogin> with KeyboardHandlingMixin {
     _passwordController.dispose();
     _emailFocusNode.dispose();
     _passwordFocusNode.dispose();
+    _fadeController.dispose();
+    _slideController.dispose();
     disposeKeyboardHandling();
     super.dispose();
   }
@@ -87,10 +128,24 @@ class _HHLoginState extends State<HHLogin> with KeyboardHandlingMixin {
       left: 0,
       right: 0,
       child: Center(
-        child: Image.asset(
-          APPImages.icLoginLogo,
-          width: Dimens.margin350,
-          height: Dimens.margin100,
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0, -0.5),
+              end: Offset.zero,
+            ).animate(
+              CurvedAnimation(
+                parent: _slideController,
+                curve: Curves.easeOutCubic,
+              ),
+            ),
+            child: Image.asset(
+              APPImages.icLoginLogo,
+              width: Dimens.margin350,
+              height: Dimens.margin100,
+            ),
+          ),
         ),
       ),
     );
@@ -102,37 +157,50 @@ class _HHLoginState extends State<HHLogin> with KeyboardHandlingMixin {
       left: 0,
       right: 0,
       child: Center(
-        child: Container(
-          width: MediaQuery.of(context).size.width * 0.6,
-          constraints: BoxConstraints(
-            maxWidth: Dimens.margin480,
-            minWidth: Dimens.margin400,
-          ),
-          decoration: BoxDecoration(
-            color: AppColors.color171717.withOpacity(0.8),
-            borderRadius: BorderRadius.circular(Dimens.margin10),
-            border: Border.all(
-              color: AppColors.color2B2B2B,
-              width: Dimens.margin2,
-            ),
-          ),
-          child: Padding(
-            padding: EdgeInsets.all(Dimens.margin40),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildWelcomeTitle(),
-                SizedBox(height: Dimens.margin5),
-                _buildWelcomeSubtitle(),
-                SizedBox(height: Dimens.margin30),
-                _buildEmailField(),
-                SizedBox(height: Dimens.margin20),
-                _buildPasswordField(),
-                SizedBox(height: Dimens.margin30),
-                _buildSignInButton(),
-                SizedBox(height: Dimens.margin16),
-                _buildForgotPasswordButton(),
-              ],
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: SlideTransition(
+            position: _slideAnimation,
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.6,
+              constraints: BoxConstraints(
+                maxWidth: Dimens.margin480,
+                minWidth: Dimens.margin400,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.color171717.withOpacity(0.8),
+                borderRadius: BorderRadius.circular(Dimens.margin10),
+                border: Border.all(
+                  color: AppColors.color2B2B2B,
+                  width: Dimens.margin2,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Padding(
+                padding: EdgeInsets.all(Dimens.margin40),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildWelcomeTitle(),
+                    SizedBox(height: Dimens.margin5),
+                    _buildWelcomeSubtitle(),
+                    SizedBox(height: Dimens.margin30),
+                    _buildEmailField(),
+                    SizedBox(height: Dimens.margin20),
+                    _buildPasswordField(),
+                    SizedBox(height: Dimens.margin30),
+                    _buildSignInButton(),
+                    SizedBox(height: Dimens.margin16),
+                    _buildForgotPasswordButton(),
+                  ],
+                ),
+              ),
             ),
           ),
         ),
@@ -141,93 +209,202 @@ class _HHLoginState extends State<HHLogin> with KeyboardHandlingMixin {
   }
 
   Widget _buildWelcomeTitle() {
-    return AppText(
-      text: APPStrings.loginTitle,
-      appTextStyle: AppTextStyle.jostMedium30Primary,
-      textAlign: TextAlign.center,
+    return TweenAnimationBuilder<double>(
+      key: const ValueKey('title_anim'),
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 800),
+      curve: Curves.easeOut,
+      builder: (context, value, child) {
+        final clampedValue = value.clamp(0.0, 1.0);
+        return Opacity(
+          opacity: clampedValue,
+          child: child,
+        );
+      },
+      child: AppText(
+        text: APPStrings.loginTitle,
+        appTextStyle: AppTextStyle.jostMedium30Primary,
+        textAlign: TextAlign.center,
+      ),
     );
   }
 
   Widget _buildWelcomeSubtitle() {
-    return AppText(
-      text: APPStrings.loginSubTitle,
-      appTextStyle: AppTextStyle.jostMedium16Primary,
-      textAlign: TextAlign.center,
+    return TweenAnimationBuilder<double>(
+      key: const ValueKey('subtitle_anim'),
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 900),
+      curve: Curves.easeOut,
+      builder: (context, value, child) {
+        final clampedValue = value.clamp(0.0, 1.0);
+        return Opacity(
+          opacity: clampedValue,
+          child: child,
+        );
+      },
+      child: AppText(
+        text: APPStrings.loginSubTitle,
+        appTextStyle: AppTextStyle.jostMedium16Primary,
+        textAlign: TextAlign.center,
+      ),
     );
   }
 
   Widget _buildEmailField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        AppText(
-          text: APPStrings.loginEmailLbl,
-          appTextStyle: AppTextStyle.jostMedium16Gray,
-          customColor: AppColors.color949494,
-        ),
-        SizedBox(height: Dimens.margin8),
-        HHTextField(
-          controller: _emailController,
-          hintText: APPStrings.loginEmailSH,
-          focusNode: _emailFocusNode,
-          keyboardType: TextInputType.emailAddress,
-          textInputAction: TextInputAction.next,
-          enabled: !_isLoading,
-          onSubmitted: (_) {
-            FocusScope.of(context).requestFocus(_passwordFocusNode);
-          },
-        ),
-      ],
+    return TweenAnimationBuilder<double>(
+      key: const ValueKey('email_anim'),
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 1000),
+      curve: Curves.easeOut,
+      builder: (context, value, child) {
+        final clampedValue = value.clamp(0.0, 1.0);
+        return Transform.translate(
+          offset: Offset(0, 20 * (1 - clampedValue)),
+          child: Opacity(
+            opacity: clampedValue,
+            child: child,
+          ),
+        );
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppText(
+            text: APPStrings.loginEmailLbl,
+            appTextStyle: AppTextStyle.jostMedium16Gray,
+            customColor: AppColors.color949494,
+          ),
+          SizedBox(height: Dimens.margin8),
+          HHTextField(
+            controller: _emailController,
+            hintText: APPStrings.loginEmailSH,
+            focusNode: _emailFocusNode,
+            keyboardType: TextInputType.emailAddress,
+            textInputAction: TextInputAction.next,
+            enabled: !_isLoading,
+            onSubmitted: (_) {
+              FocusScope.of(context).requestFocus(_passwordFocusNode);
+            },
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildPasswordField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        AppText(
-          text: APPStrings.loginPasswordLbl,
-          appTextStyle: AppTextStyle.jostMedium16Gray,
-          customColor: AppColors.color949494,
-        ),
-        SizedBox(height: Dimens.margin8),
-        HHTextField(
-          controller: _passwordController,
-          hintText: APPStrings.loginPasswordSH,
-          isSecureField: true,
-          focusNode: _passwordFocusNode,
-          textInputAction: TextInputAction.done,
-          enabled: !_isLoading,
-          onSubmitted: (_) => _handleSignIn(),
-        ),
-      ],
+    return TweenAnimationBuilder<double>(
+      key: const ValueKey('password_anim'),
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 1100),
+      curve: Curves.easeOut,
+      builder: (context, value, child) {
+        final clampedValue = value.clamp(0.0, 1.0);
+        return Transform.translate(
+          offset: Offset(0, 20 * (1 - clampedValue)),
+          child: Opacity(
+            opacity: clampedValue,
+            child: child,
+          ),
+        );
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppText(
+            text: APPStrings.loginPasswordLbl,
+            appTextStyle: AppTextStyle.jostMedium16Gray,
+            customColor: AppColors.color949494,
+          ),
+          SizedBox(height: Dimens.margin8),
+          HHTextField(
+            controller: _passwordController,
+            hintText: APPStrings.loginPasswordSH,
+            isSecureField: true,
+            focusNode: _passwordFocusNode,
+            textInputAction: TextInputAction.done,
+            enabled: !_isLoading,
+            onSubmitted: (_) => _handleSignIn(),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildSignInButton() {
-    return HHButton(
-      text: APPStrings.loginBtn,
-      type: HHButtonType.normal,
-      onPressed: _isLoading ? null : _handleSignIn,
-      isEnabled: !_isLoading,
+    return TweenAnimationBuilder<double>(
+      key: const ValueKey('signin_anim'),
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 1200),
+      curve: Curves.easeOut,
+      builder: (context, value, child) {
+        final clampedValue = value.clamp(0.0, 1.0);
+        return Transform.translate(
+          offset: Offset(0, 20 * (1 - clampedValue)),
+          child: Opacity(
+            opacity: clampedValue,
+            child: child,
+          ),
+        );
+      },
+      child: HHButton(
+        text: APPStrings.loginBtn,
+        type: HHButtonType.normal,
+        onPressed: _isLoading ? null : _handleSignIn,
+        isEnabled: !_isLoading,
+      ),
     );
   }
 
   Widget _buildForgotPasswordButton() {
-    return HHButton(
-      text: APPStrings.loginForgotBtn,
-      type: HHButtonType.onlyText,
-      onPressed: _isLoading ? null : _handleForgotPassword,
-      isEnabled: !_isLoading,
+    return TweenAnimationBuilder<double>(
+      key: const ValueKey('forgot_anim'),
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 1300),
+      curve: Curves.easeOut,
+      builder: (context, value, child) {
+        final clampedValue = value.clamp(0.0, 1.0);
+        return Opacity(
+          opacity: clampedValue,
+          child: child,
+        );
+      },
+      child: HHButton(
+        text: APPStrings.loginForgotBtn,
+        type: HHButtonType.onlyText,
+        onPressed: _isLoading ? null : _handleForgotPassword,
+        isEnabled: !_isLoading,
+      ),
     );
   }
 
   Widget _buildLoadingOverlay() {
-    return Container(
-      color: Colors.black54,
-      child: const Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(AppColors.colorECC16E),
+    return AnimatedOpacity(
+      duration: const Duration(milliseconds: 300),
+      opacity: _isLoading ? 1.0 : 0.0,
+      child: Container(
+        color: Colors.black54,
+        child: Center(
+          child: Container(
+            padding: const EdgeInsets.all(Dimens.margin40),
+            decoration: BoxDecoration(
+              color: AppColors.color171717.withOpacity(0.9),
+              borderRadius: BorderRadius.circular(Dimens.margin10),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.colorECC16E),
+                ),
+                SizedBox(height: Dimens.margin20),
+                AppText(
+                  text: 'Signing in...',
+                  appTextStyle: AppTextStyle.jostMedium16Gray,
+                  customColor: AppColors.colorFFFFFF,
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -262,13 +439,12 @@ class _HHLoginState extends State<HHLogin> with KeyboardHandlingMixin {
       );
 
       if (response.success) {
-        // Login successful, navigate to location screen
+        // Login successful, navigate to location screen with animation
         if (mounted) {
-          Navigator.pushReplacement(
+          await RouteGenerator.navigateAndReplaceWithAnimation(
             context,
-            MaterialPageRoute(
-              builder: (context) => const HHLocationScreen(),
-            ),
+            const HHLocationScreen(),
+            animationType: AnimationType.scale,
           );
         }
       } else {
@@ -299,6 +475,11 @@ class _HHLoginState extends State<HHLogin> with KeyboardHandlingMixin {
         content: Text(message),
         backgroundColor: AppColors.colorBD7D28,
         duration: const Duration(seconds: 3),
+        behavior: SnackBarBehavior.floating,
+        margin: EdgeInsets.all(Dimens.margin20),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(Dimens.margin10),
+        ),
       ),
     );
   }

@@ -38,6 +38,9 @@ class APPImages {
   static const icMapPin = '${imageBaseURL}ic_Map-Pin.png';
   static const icChilli = '${imageBaseURL}ic_chilli.png';
   static const icVeg = '${imageBaseURL}ic_veg.png';
+  static const icErrowDown = '${imageBaseURL}ic_errow_down.png';
+  static const icProfile = '${imageBaseURL}ic_profile.png';
+  static const icLogout = '${imageBaseURL}ic_logout.png';
 
 
   //Temp Images
