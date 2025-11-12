@@ -189,6 +189,12 @@ class _HHMenuListCardState extends State<HHMenuListCard> {
         final isExpanded = widget.isMenuOpen && _expandedIndex == index;
         final isSelected = _internalSelectedItem?.id == category.id;
 
+        // Set isFirst for the first item in the list
+        final isFirst = index == 0;
+
+        // Set isLast for the last item in the list
+        final isLast = index == _categories.length - 1;
+
         bool isGoldenSaprator = false;
         if (_internalSelectedItem != null) {
           final selectedIndex = _categories.indexWhere((c) => c.id == _internalSelectedItem!.id);
@@ -197,13 +203,15 @@ class _HHMenuListCardState extends State<HHMenuListCard> {
           }
         }
 
-        print('Building item ${category.title}: isSelected = $isSelected');
+        print('Building item ${category.title}: isSelected = $isSelected, isFirst = $isFirst, isLast = $isLast');
 
         return HHMenuItemCard(
           title: category.title,
           imagePath: category.image,
           isExpanded: isExpanded,
           isSelected: isSelected,
+          isFirst: isFirst,
+          isLast: isLast,
           isGoldenSaprator: isGoldenSaprator,
           isMenuOpen: widget.isMenuOpen,
           onTap: () {

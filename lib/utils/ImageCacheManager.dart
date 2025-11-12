@@ -14,6 +14,33 @@ class ImageCacheManager {
   final Map<String, Uint8List> _memoryCache = {};
   static const int _maxCacheSize = 50; // Maximum number of images to cache in memory
 
+  /// Static helper to fetch and display a network image using caching.
+  static Widget getNetworkImage({
+    required String url,
+    required double width,
+    required double height,
+    BoxFit fit = BoxFit.cover,
+    Widget? placeholder,
+    Widget? errorWidget,
+    BorderRadius? borderRadius,
+    Color? color,
+    BlendMode? colorBlendMode,
+    Widget Function(BuildContext, Object, StackTrace?)? errorBuilder,
+  }) {
+    return ImageCacheManager().getCachedImage(
+      imageUrl: url,
+      width: width,
+      height: height,
+      fit: fit,
+      placeholder: placeholder,
+      errorWidget: errorWidget,
+      borderRadius: borderRadius,
+      color: color,
+      colorBlendMode: colorBlendMode,
+      errorBuilder: errorBuilder,
+    );
+  }
+
   /// Get cached image widget with loading and error states
   Widget getCachedImage({
     required String imageUrl,
@@ -23,9 +50,12 @@ class ImageCacheManager {
     Widget? placeholder,
     Widget? errorWidget,
     BorderRadius? borderRadius,
+    Color? color,
+    BlendMode? colorBlendMode,
+    Widget Function(BuildContext, Object, StackTrace?)? errorBuilder,
   }) {
     if (imageUrl.isEmpty) {
-      return _buildErrorWidget(errorWidget, width, height);
+      return _buildErrorWidget(errorWidget, errorBuilder, width, height);
     }
 
     return FutureBuilder<Uint8List?>(
@@ -36,7 +66,10 @@ class ImageCacheManager {
         }
 
         if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
-          return _buildErrorWidget(errorWidget, width, height);
+          if (errorBuilder != null) {
+            return errorBuilder(context, snapshot.error ?? 'Unknown error', null);
+          }
+          return _buildErrorWidget(errorWidget, errorBuilder, width, height);
         }
 
         Widget image = Image.memory(
@@ -44,8 +77,13 @@ class ImageCacheManager {
           width: width,
           height: height,
           fit: fit,
+          color: color,
+          colorBlendMode: colorBlendMode,
           errorBuilder: (context, error, stackTrace) {
-            return _buildErrorWidget(errorWidget, width, height);
+            if (errorBuilder != null) {
+              return errorBuilder(context, error, stackTrace);
+            }
+            return _buildErrorWidget(errorWidget, errorBuilder, width, height);
           },
         );
 
@@ -155,7 +193,6 @@ class ImageCacheManager {
   /// Add image to memory cache
   void _addToMemoryCache(String cacheKey, Uint8List imageData) {
     if (_memoryCache.length >= _maxCacheSize) {
-      // Remove oldest entry
       final String oldestKey = _memoryCache.keys.first;
       _memoryCache.remove(oldestKey);
     }
@@ -182,7 +219,12 @@ class ImageCacheManager {
   }
 
   /// Build error widget
-  Widget _buildErrorWidget(Widget? errorWidget, double width, double height) {
+  Widget _buildErrorWidget(
+      Widget? errorWidget,
+      Widget Function(BuildContext, Object, StackTrace?)? errorBuilder,
+      double width,
+      double height,
+      ) {
     return errorWidget ??
         Container(
           width: width,

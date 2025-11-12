@@ -70,7 +70,7 @@ This guide covers the complete API integration architecture for the Hookah Habib
 
 ### 1. Login Flow
 
-```dart
+
 import 'package:hookahhabibi/managers/AppManager.dart';
 
 final appManager = AppManager();
@@ -91,7 +91,7 @@ if (response.success) {
 } else {
   // Handle error
   print('Error: ${response.message}');
-}
+// }
 ```
 
 ### 2. Load Locations
@@ -115,7 +115,7 @@ print('Selected: ${selectedLoc?.title}');
 
 ### 3. Load Menu
 
-```dart
+
 final appManager = AppManager();
 
 // Load categories
@@ -130,11 +130,11 @@ final dishes = appManager.menuManager.getDisplayDishes();
 // Load offers
 await appManager.menuManager.loadOffers();
 final offers = appManager.menuManager.offers;
-```
+
 
 ### 4. Check Dish Availability
 
-```dart
+
 final appManager = AppManager();
 
 // Check if dish is available at selected location
@@ -145,14 +145,14 @@ if (isAvailable) {
 } else {
   print('Dish is not available at this location');
 }
-```
+
 
 ## API Endpoints
 
 ### Authentication
 
 #### Login
-```
+
 POST /api/login
 Content-Type: multipart/form-data
 
@@ -291,7 +291,7 @@ Common error codes:
 
 Example error handling:
 
-```dart
+
 final response = await authService.login(...);
 
 if (!response.success) {
@@ -306,13 +306,13 @@ if (!response.success) {
       showError(response.message ?? 'Unknown error');
   }
 }
-```
+
 
 ## State Management
 
 The app uses ChangeNotifier for state management:
 
-```dart
+
 // Listen to changes
 appManager.addListener(() {
   // State changed
@@ -322,7 +322,7 @@ appManager.addListener(() {
 final isLoggedIn = appManager.isLoggedIn;
 final user = appManager.sessionManager.currentUser;
 final location = appManager.sessionManager.selectedLocation;
-```
+
 
 ## Integration Steps
 

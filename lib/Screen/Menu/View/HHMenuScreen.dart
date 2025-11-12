@@ -323,10 +323,7 @@ class _HHMenuScreenState extends State<HHMenuScreen> {
         width: double.infinity,
         height: double.infinity,
         decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage(APPImages.imgMenuBg),
-            fit: BoxFit.cover,
-          ),
+            color: AppColors.color01110A,
         ),
         child: Stack(
           children: [

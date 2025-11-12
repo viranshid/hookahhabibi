@@ -832,7 +832,7 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
         physics: const NeverScrollableScrollPhysics(),
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: widget.isMenuOpen ? 3 : 4,
-          childAspectRatio: widget.isMenuOpen ? 0.60 : 0.55,
+          childAspectRatio: widget.isMenuOpen ? 0.65 : 0.60,
           crossAxisSpacing: Dimens.margin20,
           mainAxisSpacing: Dimens.margin20,
         ),

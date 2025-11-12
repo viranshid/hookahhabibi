@@ -28,8 +28,9 @@ class AppColors {
   static const color00541A = Color(0xFF00541A);
   static const color004216 = Color(0xFF004216);
   static const color33FFFF = Color(0x33FFFFFF);
+  static const color01110A = Color(0xFF01110A);
 
-
+  static const Color transparentColor = Colors.transparent;
   // Your existing gradients
   static const linearGradientFB9400FFAB38 = LinearGradient(
     begin: Alignment.topLeft,

@@ -6,11 +6,13 @@ import 'package:hookahhabibi/utils/app_colors.dart';
 import 'package:hookahhabibi/utils/app_dimens.dart';
 import 'package:hookahhabibi/utils/app_images.dart';
 
-class HHMenuItemCard extends StatelessWidget {
+class HHMenuItemCard extends StatefulWidget {
   final String title;
   final String imagePath;
   final bool isExpanded;
   final bool isSelected;
+  final bool isFirst;
+  final bool isLast;
   final bool isMenuOpen;
   final bool isGoldenSaprator;
   final VoidCallback? onTap;
@@ -21,47 +23,216 @@ class HHMenuItemCard extends StatelessWidget {
     required this.imagePath,
     this.isExpanded = false,
     this.isSelected = false,
+    this.isFirst = false,
+    this.isLast = false,
     this.isMenuOpen = true,
     this.isGoldenSaprator = false,
     this.onTap,
   }) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(
-              left: 0,
-              right: Dimens.margin15,
-            ),
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? AppColors.color00541A
-                        : Colors.transparent,
-                  ),
-                  child: isMenuOpen
-                      ? _buildExpandedContent()
-                      : _buildCollapsedContent(),
-                ),
-                if (isSelected) _buildTriangleIndicator(),
-              ],
-            ),
-          ),
-          _buildSeparator(),
-        ],
+  State<HHMenuItemCard> createState() => _HHMenuItemCardState();
+}
+
+class _HHMenuItemCardState extends State<HHMenuItemCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 250),
+      vsync: this,
+    );
+
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.0,
+    ).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeInOut,
       ),
     );
   }
 
+  @override
+  void didUpdateWidget(HHMenuItemCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // Animate when selection changes
+    if (oldWidget.isSelected != widget.isSelected) {
+      _animationController.forward(from: 0.0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  bool get isSelected => widget.isSelected;
+  bool get isFirst => widget.isFirst;
+  bool get isLast => widget.isLast;
+  bool get isMenuOpen => widget.isMenuOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: widget.onTap,
+      child: AnimatedBuilder(
+        animation: _animationController,
+        builder: (context, child) {
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(
+                  left: 0,
+                  right: Dimens.margin15,
+                ),
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 250),
+                      curve: Curves.easeInOut,
+                      decoration: BoxDecoration(
+                        color: widget.isSelected
+                            ? AppColors.color004216
+                            : Colors.transparent,
+                        border: _buildCustomBorder(),
+                      ),
+                      child: widget.isMenuOpen
+                          ? _buildExpandedContent()
+                          : _buildCollapsedContent(),
+                    ),
+                    if (widget.isSelected)
+                      AnimatedPositioned(
+                        duration: const Duration(milliseconds: 250),
+                        curve: Curves.easeInOut,
+                        right: -15.0,
+                        top: widget.isMenuOpen ? 0 : -30,
+                        bottom: 0,
+                        child: Center(
+                          child: AnimatedOpacity(
+                            duration: const Duration(milliseconds: 200),
+                            opacity: 1.0,
+                            child: CustomPaint(
+                              size: const Size(15.0, 30.0),
+                              painter: TrianglePainter(color: AppColors.color004216),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Border _buildCustomBorder() {
+    const borderColor = AppColors.colorECC16E;
+    const transparentColor = Colors.transparent;
+    const borderWidth = 1.0;
+    const selectedBorderWidth = 2.0;
+
+    // All items have all 4 borders defined
+    // Only show colors where needed, rest are transparent
+
+    if (isSelected) {
+      // Selected: Show top and bottom borders (2px), hide left and right
+      return Border(
+        top: BorderSide(
+          color: borderColor,
+          width: selectedBorderWidth,
+        ),
+        bottom: BorderSide(
+          color: borderColor,
+          width: selectedBorderWidth,
+        ),
+        left: BorderSide(
+          color: transparentColor,
+          width: borderWidth,
+        ),
+        right: BorderSide(
+          color: transparentColor,
+          width: borderWidth,
+        ),
+      );
+    } else if (isFirst) {
+      // First item: Show bottom and right borders, hide top and left
+      return const Border(
+        top: BorderSide(
+          color: transparentColor,
+          width: borderWidth,
+        ),
+        bottom: BorderSide(
+          color: borderColor,
+          width: borderWidth,
+        ),
+        left: BorderSide(
+          color: transparentColor,
+          width: borderWidth,
+        ),
+        right: BorderSide(
+          color: borderColor,
+          width: borderWidth,
+        ),
+      );
+    } else if (isLast) {
+      // Last item: Show top and right borders, hide bottom and left
+      return const Border(
+        top: BorderSide(
+          color: borderColor,
+          width: borderWidth,
+        ),
+        bottom: BorderSide(
+          color: transparentColor,
+          width: borderWidth,
+        ),
+        left: BorderSide(
+          color: transparentColor,
+          width: borderWidth,
+        ),
+        right: BorderSide(
+          color: borderColor,
+          width: borderWidth,
+        ),
+      );
+    } else {
+      // Regular items: Show bottom and right borders, hide top and left
+      return const Border(
+        top: BorderSide(
+          color: transparentColor,
+          width: borderWidth,
+        ),
+        bottom: BorderSide(
+          color: borderColor,
+          width: borderWidth,
+        ),
+        left: BorderSide(
+          color: transparentColor,
+          width: borderWidth,
+        ),
+        right: BorderSide(
+          color: borderColor,
+          width: borderWidth,
+        ),
+      );
+    }
+  }
+
   Widget _buildExpandedContent() {
-    return Padding(
+    return AnimatedPadding(
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeInOut,
       padding: const EdgeInsets.symmetric(
         horizontal: Dimens.margin10,
         vertical: Dimens.margin10,
@@ -94,7 +265,9 @@ class HHMenuItemCard extends StatelessWidget {
   }
 
   Widget _buildCollapsedContent() {
-    return Padding(
+    return AnimatedPadding(
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeInOut,
       padding: const EdgeInsets.symmetric(
         horizontal: Dimens.margin5,
         vertical: Dimens.margin10,
@@ -111,9 +284,10 @@ class HHMenuItemCard extends StatelessWidget {
   }
 
   Widget _buildImage() {
-    final isUrl = imagePath.startsWith('http://') || imagePath.startsWith('https://');
+    final isUrl = widget.imagePath.startsWith('http://') || widget.imagePath.startsWith('https://');
 
     return RepaintBoundary(
+      key: ValueKey('image_${widget.imagePath}'),
       child: Container(
         width: Dimens.margin70,
         height: Dimens.margin70,
@@ -123,6 +297,7 @@ class HHMenuItemCard extends StatelessWidget {
         child: Stack(
           alignment: Alignment.center,
           children: [
+            // Background image
             ClipRRect(
               borderRadius: BorderRadius.circular(Dimens.margin8),
               child: Image.asset(
@@ -142,17 +317,18 @@ class HHMenuItemCard extends StatelessWidget {
                 },
               ),
             ),
+            // Foreground icon/image
             if (isUrl)
               ClipRRect(
                 borderRadius: BorderRadius.circular(Dimens.margin6),
                 child: Image.network(
-                  imagePath,
-                  key: ValueKey(imagePath),
+                  widget.imagePath,
+                  key: ValueKey('network_${widget.imagePath}'),
                   width: Dimens.margin40,
                   height: Dimens.margin40,
                   fit: BoxFit.contain,
-                  cacheWidth: 40,
-                  cacheHeight: 40,
+                  cacheWidth: 120,
+                  cacheHeight: 120,
                   loadingBuilder: (context, child, loadingProgress) {
                     if (loadingProgress == null) return child;
                     return Container(
@@ -178,7 +354,7 @@ class HHMenuItemCard extends StatelessWidget {
                       color: Colors.transparent,
                       child: Icon(
                         Icons.restaurant_menu,
-                        color: isSelected
+                        color: widget.isSelected
                             ? AppColors.colorFFFFFF
                             : AppColors.colorECC16E,
                         size: 20,
@@ -191,13 +367,13 @@ class HHMenuItemCard extends StatelessWidget {
               ClipRRect(
                 borderRadius: BorderRadius.circular(Dimens.margin6),
                 child: Image.asset(
-                  imagePath,
-                  key: ValueKey(imagePath),
+                  widget.imagePath,
+                  key: ValueKey('asset_${widget.imagePath}'),
                   width: Dimens.margin40,
                   height: Dimens.margin40,
                   fit: BoxFit.contain,
-                  color: isSelected ? null : AppColors.colorFFFFFF.withOpacity(0.7),
-                  colorBlendMode: isSelected ? null : BlendMode.modulate,
+                  color: widget.isSelected ? null : AppColors.colorFFFFFF.withOpacity(0.7),
+                  colorBlendMode: widget.isSelected ? null : BlendMode.modulate,
                   errorBuilder: (context, error, stackTrace) {
                     return Container(
                       width: Dimens.margin40,
@@ -205,7 +381,7 @@ class HHMenuItemCard extends StatelessWidget {
                       color: Colors.transparent,
                       child: Icon(
                         Icons.restaurant_menu,
-                        color: isSelected
+                        color: widget.isSelected
                             ? AppColors.colorFFFFFF
                             : AppColors.colorECC16E,
                         size: 20,
@@ -221,57 +397,45 @@ class HHMenuItemCard extends StatelessWidget {
   }
 
   Widget _buildText() {
-    // Use bold font weight when selected
-    return Text(
-      title.toUpperCase(),
+    return AnimatedDefaultTextStyle(
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeInOut,
       style: TextStyle(
         fontFamily: 'Oswald',
-        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400, // Bold when selected
+        fontWeight: widget.isSelected ? FontWeight.w700 : FontWeight.w400,
         fontSize: Dimens.textSize20,
         height: 1.0,
         letterSpacing: 0,
         color: AppColors.colorECC16E,
       ),
-      maxLines: 2,
-      overflow: TextOverflow.ellipsis,
-      textAlign: TextAlign.left,
+      child: Text(
+        widget.title.toUpperCase(),
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.left,
+      ),
     );
   }
 
   Widget _buildCollapsedText() {
     return SizedBox(
       width: Dimens.margin80,
-      child: Text(
-        title.toUpperCase(),
+      child: AnimatedDefaultTextStyle(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeInOut,
         style: TextStyle(
           fontFamily: 'Oswald',
-          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400, // Bold when selected
+          fontWeight: widget.isSelected ? FontWeight.w700 : FontWeight.w400,
           fontSize: Dimens.textSize14,
           height: 18 / 14,
           letterSpacing: 0,
           color: AppColors.colorECC16E,
         ),
-        maxLines: 3,
-        overflow: TextOverflow.ellipsis,
-        textAlign: TextAlign.center,
-      ),
-    );
-  }
-
-  Widget _buildSeparator() {
-    return Container(
-      width: double.infinity,
-      height: Dimens.margin1,
-      margin: const EdgeInsets.only(
-        left: 0,
-        right: Dimens.margin15 + Dimens.margin10,
-      ),
-      child: CustomPaint(
-        painter: DashedLinePainter(
-          color: isGoldenSaprator ? AppColors.colorBD7D28 : AppColors.color33FFFF,
-          strokeWidth: 1.0,
-          dashLength: 3.0,
-          gapLength: 3.0,
+        child: Text(
+          widget.title.toUpperCase(),
+          maxLines: 3,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
         ),
       ),
     );
@@ -281,7 +445,7 @@ class HHMenuItemCard extends StatelessWidget {
     double rightPosition = -15.0;
     double triangleWidth = 15.0;
     double triangleHeight = 30.0;
-    double topPosition = isMenuOpen ? 0 : -30;
+    double topPosition = widget.isMenuOpen ? 0 : -30;
 
     return Positioned(
       right: rightPosition,
@@ -315,40 +479,6 @@ class TrianglePainter extends CustomPainter {
     path.close();
 
     canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class DashedLinePainter extends CustomPainter {
-  final Color color;
-  final double strokeWidth;
-  final double dashLength;
-  final double gapLength;
-
-  DashedLinePainter({
-    required this.color,
-    this.strokeWidth = 1.0,
-    this.dashLength = 3.0,
-    this.gapLength = 3.0,
-  }) : super();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = strokeWidth
-      ..style = PaintingStyle.stroke;
-
-    double startX = 0;
-    final y = size.height / 2;
-
-    while (startX < size.width) {
-      final endX = (startX + dashLength).clamp(0.0, size.width);
-      canvas.drawLine(Offset(startX, y), Offset(endX, y), paint);
-      startX += dashLength + gapLength;
-    }
   }
 
   @override

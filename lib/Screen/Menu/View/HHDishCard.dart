@@ -412,39 +412,23 @@ class _HHDishCardState extends State<HHDishCard>
               ),
             );
           },
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              // Calculate available space
-              final cardWidth = constraints.maxWidth;
-              final cardHeight = constraints.maxHeight;
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Image Section - Now wrapped in a flexible container that maintains aspect ratio
+              Flexible(
+                child: _buildSquareImage(0), // Size parameter is no longer used
+              ),
 
-              // Calculate image size based on available space
-              final availableHeightForImage = cardHeight - titleHeight - descriptionHeight - bottomRowHeight - (cardPadding * 2);
-              final maxImageWidth = cardWidth - (cardPadding);
+              // Title Section - Fixed 50px height
+              _buildFixedHeightTitle(),
 
-              // Use the smaller of width or available height to keep it square
-              final imageSize = availableHeightForImage < maxImageWidth
-                  ? availableHeightForImage
-                  : maxImageWidth;
+              // Description Section - Fixed 70px height
+              _buildFixedHeightDescription(),
 
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.max,
-                children: [
-                  // Square Image Section - Flexible
-                  _buildSquareImage(imageSize),
-
-                  // Title Section - Fixed 50px height
-                  _buildFixedHeightTitle(),
-
-                  // Description Section - Fixed 70px height
-                  _buildFixedHeightDescription(),
-
-                  // Bottom Row Section - Fixed 40px height
-                  _buildFixedHeightBottomRow(),
-                ],
-              );
-            },
+              // Bottom Row Section - Fixed 40px height
+              _buildFixedHeightBottomRow(),
+            ],
           ),
         ),
       ),
@@ -461,106 +445,104 @@ class _HHDishCardState extends State<HHDishCard>
           padding: const EdgeInsets.all(cardPadding),
           child: Stack(
             children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                width: size,
-                height: size,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(Dimens.margin12),
-                  border: _isImageHovered
-                      ? Border.all(
-                    color: AppColors.colorECC16E,
-                    width: 3,
-                  )
-                      : null,
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(Dimens.margin12),
-                  child: Stack(
-                    children: [
-                      ImageCacheManager().getCachedImage(
-                        imageUrl: widget.dish.imageUrl,
-                        width: size,
-                        height: size,
-                        fit: BoxFit.cover,
-                        borderRadius: BorderRadius.circular(Dimens.margin12),
-                        placeholder: Container(
-                          width: size,
-                          height: size,
-                          decoration: BoxDecoration(
-                            color: AppColors.color949494.withOpacity(0.3),
-                            borderRadius: BorderRadius.circular(Dimens.margin12),
+              // Force aspect ratio to be 1:1 using AspectRatio widget
+              AspectRatio(
+                aspectRatio: 1.0, // This enforces a perfect square
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(Dimens.margin12),
+                    border: _isImageHovered
+                        ? Border.all(
+                      color: AppColors.colorECC16E,
+                      width: 3,
+                    )
+                        : null,
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(Dimens.margin12),
+                    child: Stack(
+                      children: [
+                        ImageCacheManager().getCachedImage(
+                          imageUrl: widget.dish.imageUrl,
+                          width: double.infinity, // Fill the width of the container
+                          height: double.infinity, // Fill the height of the container
+                          fit: BoxFit.cover,
+                          borderRadius: BorderRadius.circular(Dimens.margin12),
+                          placeholder: Container(
+                            decoration: BoxDecoration(
+                              color: AppColors.color949494.withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(Dimens.margin12),
+                            ),
+                            child: const Center(
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                    AppColors.colorECC16E),
+                              ),
+                            ),
                           ),
-                          child: const Center(
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                  AppColors.colorECC16E),
+                          errorWidget: Container(
+                            decoration: BoxDecoration(
+                              color: AppColors.color949494.withOpacity(0.5),
+                              borderRadius: BorderRadius.circular(Dimens.margin12),
+                            ),
+                            child: const Icon(
+                              Icons.restaurant,
+                              color: AppColors.colorECC16E,
+                              size: 50,
                             ),
                           ),
                         ),
-                        errorWidget: Container(
-                          width: size,
-                          height: size,
-                          decoration: BoxDecoration(
-                            color: AppColors.color949494.withOpacity(0.5),
-                            borderRadius: BorderRadius.circular(Dimens.margin12),
-                          ),
-                          child: const Icon(
-                            Icons.restaurant,
-                            color: AppColors.colorECC16E,
-                            size: 50,
-                          ),
-                        ),
-                      ),
-                      if (_isImageHovered)
-                        Container(
-                          color: Colors.black26,
-                          child: Center(
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: Dimens.margin15,
-                                vertical: Dimens.margin10,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.colorECC16E,
-                                borderRadius: BorderRadius.circular(Dimens.margin8),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.3),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.zoom_in,
-                                    color: AppColors.color00541A,
-                                    size: Dimens.margin22,
-                                  ),
-                                  SizedBox(width: Dimens.margin10),
-                                  Text(
-                                    'View Full Image',
-                                    style: TextStyle(
-                                      fontFamily: 'Oswald',
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: Dimens.textSize16,
-                                      color: AppColors.color00541A,
+                        if (_isImageHovered)
+                          Container(
+                            color: Colors.black26,
+                            child: Center(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: Dimens.margin15,
+                                  vertical: Dimens.margin10,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.colorECC16E,
+                                  borderRadius: BorderRadius.circular(Dimens.margin8),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.3),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.zoom_in,
+                                      color: AppColors.color00541A,
+                                      size: Dimens.margin22,
+                                    ),
+                                    SizedBox(width: Dimens.margin10),
+                                    Text(
+                                      'View Full Image',
+                                      style: TextStyle(
+                                        fontFamily: 'Oswald',
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: Dimens.textSize16,
+                                        color: AppColors.color00541A,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
-              if (!widget.dish.isAvailable) _buildNotAvailableOverlay(size),
+              if (!widget.dish.isAvailable) _buildNotAvailableOverlay(),
             ],
           ),
         ),
@@ -568,30 +550,36 @@ class _HHDishCardState extends State<HHDishCard>
     );
   }
 
-  Widget _buildNotAvailableOverlay(double size) {
-    return AnimatedOpacity(
-      duration: const Duration(milliseconds: 300),
-      opacity: 0.9,
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          color: const Color(0xB2FFFFFF),
-          borderRadius: BorderRadius.circular(Dimens.margin12),
-        ),
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: Dimens.margin10),
-            child: Text(
-              'Currently Not\nAvailable',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Oswald',
-                fontWeight: FontWeight.w500,
-                fontSize: Dimens.textSize26,
-                height: 36 / 26,
-                letterSpacing: 0,
-                color: const Color(0xFFCD3030),
+  Widget _buildNotAvailableOverlay() {
+    return Positioned.fill(
+      child: Padding(
+        padding: EdgeInsets.zero,
+        child: AspectRatio(
+          aspectRatio: 1.0,
+          child: AnimatedOpacity(
+            duration: const Duration(milliseconds: 300),
+            opacity: 0.9,
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xB2FFFFFF),
+                borderRadius: BorderRadius.circular(Dimens.margin12),
+              ),
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: Dimens.margin10),
+                  child: Text(
+                    'Currently Not\nAvailable',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: 'Oswald',
+                      fontWeight: FontWeight.w500,
+                      fontSize: Dimens.textSize26,
+                      height: 36 / 26,
+                      letterSpacing: 0,
+                      color: const Color(0xFFCD3030),
+                    ),
+                  ),
+                ),
               ),
             ),
           ),

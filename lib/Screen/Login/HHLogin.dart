@@ -74,9 +74,9 @@ class _HHLoginState extends State<HHLogin>
     _fadeController.forward();
     _slideController.forward();
 
-    // For testing, pre-fill credentials
-    // _emailController.text = 'mt11@example.com';
-    // _passwordController.text = 'Test@123';
+    // // For testing, pre-fill credentials
+    _emailController.text = 'mt11@example.com';
+    _passwordController.text = 'Test@123';
   }
 
   @override
@@ -281,7 +281,7 @@ class _HHLoginState extends State<HHLogin>
             focusNode: _emailFocusNode,
             keyboardType: TextInputType.emailAddress,
             textInputAction: TextInputAction.next,
-            enabled: !_isLoading,
+            enabled: !_isLoading,//false,,
             onSubmitted: (_) {
               FocusScope.of(context).requestFocus(_passwordFocusNode);
             },
@@ -322,7 +322,7 @@ class _HHLoginState extends State<HHLogin>
             isSecureField: true,
             focusNode: _passwordFocusNode,
             textInputAction: TextInputAction.done,
-            enabled: !_isLoading,
+            enabled: !_isLoading,//false,
             onSubmitted: (_) => _handleSignIn(),
           ),
         ],

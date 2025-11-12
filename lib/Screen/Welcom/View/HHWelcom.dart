@@ -265,16 +265,16 @@ class _HHWelcomeState extends State<HHWelcome>
           },
           child: Container(
             width: Dimens.margin538,
-            height: Dimens.margin118,
+            height: Dimens.margin95,
             child: Image.asset(
               APPImages.imgWelcomSubimage,
               width: Dimens.margin538,
-              height: Dimens.margin118,
+              height: Dimens.margin95,
               fit: BoxFit.contain,
               errorBuilder: (context, error, stackTrace) {
                 return Container(
                   width: Dimens.margin538,
-                  height: Dimens.margin118,
+                  height: Dimens.margin95,
                   decoration: BoxDecoration(
                     color: AppColors.color949494.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(Dimens.margin10),
