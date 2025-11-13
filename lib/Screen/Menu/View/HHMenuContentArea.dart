@@ -10,6 +10,7 @@ import 'package:hookahhabibi/utils/AppText.dart';
 import 'package:hookahhabibi/utils/AppTextStyle.dart';
 import 'package:hookahhabibi/utils/app_colors.dart';
 import 'package:hookahhabibi/utils/app_dimens.dart';
+import 'package:hookahhabibi/utils/app_images.dart';
 
 // Import the new HHHookahCard
 import 'package:hookahhabibi/Screen/Menu/View/HHHookahCard.dart';
@@ -109,7 +110,7 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
     // Set loading state
     setState(() => _isLoading = true);
 
-    print('🍽️ Loading dishes for category: ${widget.selectedCategoryId}');
+    print('ðŸ½ï¸ Loading dishes for category: ${widget.selectedCategoryId}');
 
     await _appManager.menuManager.loadDishes(
       categoryId: widget.selectedCategoryId!,
@@ -131,8 +132,8 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
       setState(() => _isLoading = false);
     }
 
-    print('✅ Dishes loaded successfully');
-    print('📋 Section keys created: ${_sectionKeys.length}');
+    print('âœ… Dishes loaded successfully');
+    print('ðŸ“‹ Section keys created: ${_sectionKeys.length}');
 
     // Scroll to top after loading
     if (_mainScrollController.hasClients) {
@@ -239,7 +240,7 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
 
   void _scrollTagIntoView(String tagId) {
     if (!_tagsScrollController.hasClients) {
-      print('⚠️ Tags scroll controller not attached yet');
+      print('âš ï¸ Tags scroll controller not attached yet');
       return;
     }
 
@@ -259,7 +260,7 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
         );
       }
     } catch (e) {
-      print('⚠️ Error scrolling tag into view: $e');
+      print('âš ï¸ Error scrolling tag into view: $e');
     }
   }
 
@@ -632,7 +633,7 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
 
     return GestureDetector(
       onTap: (_isScrolling || _isLoading) ? null : () {
-        print('🏷️ Tag clicked: ${tag.title} (${tag.id})');
+        print('ðŸ·ï¸ Tag clicked: ${tag.title} (${tag.id})');
         _scrollToSection(tag.id);
       },
       child: AnimatedContainer(
@@ -677,7 +678,7 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
       return _buildNoDishesState();
     }
 
-    print('🔨 Building ${tags.length} dish sections');
+    print('ðŸ”¨ Building ${tags.length} dish sections');
     tags.forEach((tag) {
       print('  - ${tag.title}: ${grouped[tag.id]?.length ?? 0} dishes');
     });
@@ -700,7 +701,7 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
 
   // Regular dish section
   Widget _buildDishSection(HHDishCategoryModel tag, List<HHDishModel> dishes) {
-    print('🗿️ Building section for: ${tag.title} (${tag.id}) with key: ${_sectionKeys[tag.id]}');
+    print('ðŸ—¿ï¸ Building section for: ${tag.title} (${tag.id}) with key: ${_sectionKeys[tag.id]}');
 
     return Container(
       key: _sectionKeys[tag.id] ??= GlobalKey(),
@@ -719,7 +720,7 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
 
   // Special section for Make Your Own with subcategories
   Widget _buildMakeYourOwnSection(HHDishCategoryModel tag, List<HHDishModel> allDishes) {
-    print('🗿️ Building Make Your Own section with subcategories');
+    print('ðŸ—¿ï¸ Building Make Your Own section with subcategories');
 
     // Get all subcategories that should be under Make Your Own
     final subSubCategories = _getSubSubCategories();
@@ -760,32 +761,65 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
 
   // Main category separator
   Widget _buildSeparator(String title) {
-    return Container(
-      margin: const EdgeInsets.only(
-        top: Dimens.margin30,
-        left: Dimens.margin20,
-        right: Dimens.margin40,
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Container(height: 1, color: AppColors.color33FFFF),
+    return Column(
+      children: [
+        Container(
+          margin: const EdgeInsets.only(
+            top: Dimens.margin30,
+            left: Dimens.margin20,
+            right: Dimens.margin40,
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: Dimens.margin20),
-            child: AppText(
-              text: title.toUpperCase(),
-              appTextStyle: AppTextStyle.oswaldMedium22OffWhite,
-              customFontSize: Dimens.textSize20,
-              customColor: AppColors.colorF4F5F7,
-              textAlign: TextAlign.center,
-              applyTextTransform: false,
-            ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Container(height: 1, color: AppColors.color33FFFF),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: Dimens.margin20),
+                child: AppText(
+                  text: title.toUpperCase(),
+                  appTextStyle: AppTextStyle.oswaldMedium22OffWhite,
+                  customFontSize: Dimens.textSize20,
+                  customColor: AppColors.colorF4F5F7,
+                  textAlign: TextAlign.center,
+                  applyTextTransform: false,
+                ),
+              ),
+              Expanded(
+                child: Container(height: 1, color: AppColors.color33FFFF),
+              ),
+            ],
           ),
-          Expanded(
-            child: Container(height: 1, color: AppColors.color33FFFF),
-          ),
-        ],
+        ),
+        // Add price image for Shisha categories
+        if (_isShishaParentCategory)
+          _buildPriceImage(title),
+      ],
+    );
+  }
+
+  // Helper to show price image for shisha categories
+  Widget _buildPriceImage(String categoryTitle) {
+    String? imagePath;
+
+    // Determine which image to show based on the category title
+    if (categoryTitle.toLowerCase().contains("hookah habibi house mix")) {
+      imagePath = APPImages.imgPricHookahHabibiHouseMix;
+    } else if (categoryTitle.toLowerCase().contains("make your own")) {
+      imagePath = APPImages.imgPriceMakeYourOwnShisha;
+    } else {
+      return SizedBox.shrink(); // No image for other categories
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: Dimens.margin15),
+      child: Center(
+        child: Image.asset(
+          imagePath,
+          height: 50,
+          width: 620,// Adjust height as needed
+          fit: BoxFit.contain,
+        ),
       ),
     );
   }
@@ -795,14 +829,14 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
     return Container(
       margin: const EdgeInsets.only(
         top: Dimens.margin20,
-        left: Dimens.margin200, // More indented
-        right: Dimens.margin200,
+        left: Dimens.margin250, // More indented
+        right: Dimens.margin250,
       ),
       child: Row(
         children: [
           Expanded(
             child: CustomPaint(
-              painter: DashedLinePainter(color: AppColors.colorFFFFFF.withOpacity(0.3)),
+              painter: DashedLinePainter(color: AppColors.colorBB7A24.withOpacity(0.5)),
               child: Container(height: 1),
             ),
           ),
@@ -816,14 +850,14 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
                 fontSize: Dimens.textSize20,
                 height: 1.0, // 100% line height
                 letterSpacing: 0.0,
-                color: AppColors.colorECC16E, // Using the primary light color
+                color: AppColors.colorBB7A24, // Using the primary light color
               ),
               textAlign: TextAlign.center,
             ),
           ),
           Expanded(
             child: CustomPaint(
-              painter: DashedLinePainter(color: AppColors.colorFFFFFF.withOpacity(0.3)),
+              painter: DashedLinePainter(color: AppColors.colorBB7A24.withOpacity(0.5)),
               child: Container(height: 1),
             ),
           ),
@@ -877,7 +911,7 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
         physics: const NeverScrollableScrollPhysics(),
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: widget.isMenuOpen ? 3 : 4, // Same as dish grid
-          childAspectRatio: 3.2, // Aspect ratio for the hookah card (width ÷ height)
+          childAspectRatio: 3.2, // Aspect ratio for the hookah card (width Ã· height)
           crossAxisSpacing: Dimens.margin20,
           mainAxisSpacing: Dimens.margin20,
         ),
