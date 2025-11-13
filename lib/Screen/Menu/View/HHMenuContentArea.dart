@@ -11,6 +11,9 @@ import 'package:hookahhabibi/utils/AppTextStyle.dart';
 import 'package:hookahhabibi/utils/app_colors.dart';
 import 'package:hookahhabibi/utils/app_dimens.dart';
 
+// Import the new HHHookahCard
+import 'package:hookahhabibi/Screen/Menu/View/HHHookahCard.dart';
+
 class HHMenuContentArea extends StatefulWidget {
   final bool isMenuOpen;
   final String? selectedCategoryId;
@@ -34,6 +37,9 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
   final GlobalKey _tagsBarKey = GlobalKey();
   final GlobalKey _offersKey = GlobalKey();
 
+  // Create a global key for the offers widget to ensure it's not recreated
+  final GlobalKey _offersWidgetKey = GlobalKey();
+
   String? _selectedTag;
   bool _isLoading = false;
   bool _isTagsSticky = false;
@@ -46,6 +52,9 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
   static const double _stickyHeaderHeight = 70.0;
   static const double _scrollOffset = 80.0;
   static const double _sectionDetectionThreshold = 150.0;
+
+  // Constant to identify Shisha parent category ID
+  static const String SHISHA_PARENT_CATEGORY_ID = "35"; // Based on the API response
 
   @override
   void initState() {
@@ -270,28 +279,31 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
       duration: const Duration(milliseconds: 500),
       curve: Curves.easeInOutCubic,
       alignment: 0.0,
-    ).whenComplete(() {
-      _resetScrolling();
-    });
+    ).then((_) => _resetScrolling());
   }
 
   void _resetScrolling() {
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (mounted) {
-        setState(() {
-          _isScrolling = false;
-          _isProgrammaticScroll = false;
-        });
-      }
-    });
+    if (mounted) {
+      setState(() {
+        _isScrolling = false;
+        _isProgrammaticScroll = false;
+      });
+    }
   }
 
-  // ============= DATA GETTERS =============
+  // ============= DATA HELPERS =============
 
+  // Check if current category is the Shisha parent category
+  bool get _isShishaParentCategory {
+    return widget.selectedCategoryId == SHISHA_PARENT_CATEGORY_ID;
+  }
+
+  // Use the existing getSubCategories method
   List<HHDishCategoryModel> _getSubCategories() {
     return _appManager.menuManager.getSubCategories();
   }
 
+  // Use the existing getGroupedDishes but modified to match the shisha identification
   Map<String, List<HHDishModel>> _getGroupedDishes() {
     final apiDishes = _appManager.menuManager.getDisplayDishes();
     final locationManager = _appManager.locationManager;
@@ -322,258 +334,108 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        // Main scrollable content
-        SingleChildScrollView(
-          key: ValueKey('scroll_${widget.selectedCategoryId}'),
-          controller: _mainScrollController,
-          child: Padding(
-            padding: const EdgeInsets.only(left: 10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Offers section - always visible, loads independently
-                const HHOffers(),
+    final contentWidth = widget.isMenuOpen
+        ? MediaQuery.of(context).size.width - 300
+        : MediaQuery.of(context).size.width - 100;
 
-                // Tags and dishes area - show loader when loading
-                if (_isLoading)
-                  _buildLoadingArea()
-                else
-                  _buildContentArea(),
+    return SizedBox(
+      width: contentWidth,
+      child: Stack(
+        children: [
+          if (_isLoading) ...[
+            // Show offers section even during loading
+            _buildPersistentOffersSection(),
 
-                SizedBox(height: Dimens.margin40),
+            // Show loading indicator below the offers section
+            Positioned(
+              top: 240, // Below the offers section
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: Center(child: _buildLoadingIndicator()),
+            ),
+          ] else if (_getSubCategories().isEmpty) ...[
+            // No categories found - still show offers
+            _buildPersistentOffersSection(),
+
+            // Show empty state below offers
+            Positioned(
+              top: 240, // Below the offers section
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: _buildEmptyState(),
+            ),
+          ] else ...[
+            // Categories and dishes found, build normal content
+            CustomScrollView(
+              controller: _mainScrollController,
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                // Offers section with persistent state
+                SliverToBoxAdapter(
+                  child: _buildPersistentOffersSection(),
+                ),
+                SliverToBoxAdapter(
+                  child: _buildOriginalTagsBar(),
+                ),
+                SliverToBoxAdapter(
+                  child: _buildAllDishSections(),
+                ),
+                SliverToBoxAdapter(
+                  child: SizedBox(height: Dimens.margin100),
+                ),
               ],
             ),
-          ),
-        ),
-
-        // Sticky tags bar - only show when not loading
-        if (_isTagsSticky && _getSubCategories().isNotEmpty && !_isLoading)
-          _buildStickyTagsBar(),
-      ],
+            if (_isTagsSticky) _buildStickyTagsBar(),
+          ],
+        ],
+      ),
     );
   }
 
-  Widget _buildLoadingArea() {
+  // New method to keep the offers section persistent with a global key
+  Widget _buildPersistentOffersSection() {
     return Container(
+      key: _offersKey,
       margin: const EdgeInsets.only(
-        top: Dimens.margin10,
-        left: Dimens.margin10,
+        top: Dimens.margin20,
+        left: Dimens.margin20,
         right: Dimens.margin30,
+        bottom: Dimens.margin10,
       ),
+      height: 220,
+      child: HHOffers(
+        key: _offersWidgetKey, // Use a persistent global key
+      ),
+    );
+  }
+
+  // ============= SECTIONS BUILD =============
+
+  Widget _buildLoadingIndicator() {
+    return Center(
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Loading placeholder for tags
-          Container(
-            height: _stickyHeaderHeight,
-            decoration: BoxDecoration(
-              color: const Color(0xFF011109),
-              borderRadius: BorderRadius.circular(Dimens.margin8),
-            ),
-            child: Center(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.colorECC16E),
-                      strokeWidth: 2,
-                    ),
-                  ),
-                  SizedBox(width: Dimens.margin15),
-                  Text(
-                    'Loading categories...',
-                    style: TextStyle(
-                      fontFamily: 'Oswald',
-                      fontSize: Dimens.textSize16,
-                      color: AppColors.colorECC16E,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.colorECC16E),
           ),
-
-          // Loading placeholder for dishes
-          Padding(
-            padding: const EdgeInsets.only(
-              top: Dimens.margin30,
-              left: Dimens.margin10,
-              right: Dimens.margin10,
-            ),
-            child: _buildDishesLoadingGrid(),
+          SizedBox(height: Dimens.margin20),
+          AppText(
+            text: 'Loading...',
+            appTextStyle: AppTextStyle.rubikRegular14Light,
+            customColor: AppColors.colorF4F5F7,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildDishesLoadingGrid() {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: widget.isMenuOpen ? 3 : 4,
-        childAspectRatio: widget.isMenuOpen ? 0.60 : 0.55,
-        crossAxisSpacing: Dimens.margin20,
-        mainAxisSpacing: Dimens.margin20,
-      ),
-      itemCount: widget.isMenuOpen ? 6 : 8,
-      itemBuilder: (context, index) => _buildSkeletonCard(),
-    );
-  }
-
-  Widget _buildSkeletonCard() {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0x33000000),
-        borderRadius: BorderRadius.circular(Dimens.margin10),
-        border: Border.all(
-          color: const Color(0x1AFFFFFF),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Skeleton image
-          Expanded(
-            flex: 3,
-            child: Container(
-              margin: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0x1AFFFFFF),
-                borderRadius: BorderRadius.circular(Dimens.margin12),
-              ),
-              child: Center(
-                child: TweenAnimationBuilder<double>(
-                  tween: Tween(begin: 0.3, end: 1.0),
-                  duration: const Duration(milliseconds: 1000),
-                  curve: Curves.easeInOut,
-                  builder: (context, value, child) {
-                    return Opacity(
-                      opacity: value,
-                      child: child,
-                    );
-                  },
-                  onEnd: () {
-                    if (mounted) {
-                      setState(() {});
-                    }
-                  },
-                  child: Icon(
-                    Icons.restaurant,
-                    color: AppColors.colorECC16E.withOpacity(0.3),
-                    size: 40,
-                  ),
-                ),
-              ),
-            ),
-          ),
-
-          // Skeleton title
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Container(
-              height: 20,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: const Color(0x1AFFFFFF),
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-          ),
-
-          SizedBox(height: Dimens.margin8),
-
-          // Skeleton description
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Column(
-              children: [
-                Container(
-                  height: 14,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: const Color(0x1AFFFFFF),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-                SizedBox(height: Dimens.margin4),
-                Container(
-                  height: 14,
-                  width: double.infinity * 0.7,
-                  decoration: BoxDecoration(
-                    color: const Color(0x1AFFFFFF),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          SizedBox(height: Dimens.margin8),
-
-          // Skeleton price
-          Padding(
-            padding: const EdgeInsets.only(
-              left: 20,
-              right: 20,
-              bottom: 15,
-            ),
-            child: Container(
-              height: 18,
-              width: 100,
-              decoration: BoxDecoration(
-                color: const Color(0x1AFFFFFF),
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildContentArea() {
-    final subCategories = _getSubCategories();
-    final groupedDishes = _getGroupedDishes();
-
-    // Check if we have no tags/subcategories
-    if (subCategories.isEmpty) {
-      return _buildNoTagsState();
-    }
-
-    // Check if we have tags but no dishes
-    if (groupedDishes.isEmpty) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildOriginalTagsBar(),
-          _buildNoDishesState(),
-        ],
-      );
-    }
-
-    // Normal content with tags and dishes
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildOriginalTagsBar(),
-        _buildAllDishSections(),
-      ],
-    );
-  }
-
-  // NEW: Empty state when no tags/subcategories exist
-  Widget _buildNoTagsState() {
+  Widget _buildEmptyState() {
     return Container(
       margin: const EdgeInsets.only(
-        top: Dimens.margin40,
+        top: Dimens.margin60,
         left: Dimens.margin20,
         right: Dimens.margin40,
       ),
@@ -782,7 +644,10 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSeparator(tag.title),
-          _buildDishGrid(dishes),
+          // Check if we're in shisha category and use the appropriate card layout
+          _isShishaParentCategory
+              ? _buildHookahGrid(dishes)
+              : _buildDishGrid(dishes),
         ],
       ),
     );
@@ -819,6 +684,7 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
     );
   }
 
+  // Original dish grid for regular menu items
   Widget _buildDishGrid(List<HHDishModel> dishes) {
     return Padding(
       padding: const EdgeInsets.only(
@@ -843,6 +709,47 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
             key: ValueKey('dish_${dish.id}'),
             dish: dish,
             onTap: (d) => debugPrint('Dish tapped: ${d.name}'),
+          );
+        },
+      ),
+    );
+  }
+
+  // Hookah grid for shisha menu items using HHHookahCard in a grid layout
+  Widget _buildHookahGrid(List<HHDishModel> dishes) {
+    return Padding(
+      padding: const EdgeInsets.only(
+        top: Dimens.margin30,
+        left: Dimens.margin20,
+        right: Dimens.margin40,
+        bottom: Dimens.margin20,
+      ),
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: widget.isMenuOpen ? 3 : 4, // Same as dish grid
+          childAspectRatio: 3.2, // Aspect ratio for the hookah card (width ÷ height)
+          crossAxisSpacing: Dimens.margin20,
+          mainAxisSpacing: Dimens.margin20,
+        ),
+        itemCount: dishes.length,
+        itemBuilder: (context, index) {
+          final dish = dishes[index];
+
+          // Convert HHDishModel to HHHookahModel
+          final hookah = HHHookahModel(
+            id: dish.id,
+            name: dish.name,
+            description: dish.description,
+            imageUrl: dish.imageUrl,
+            isAvailable: dish.isAvailable,
+          );
+
+          return HHHookahCard(
+            key: ValueKey('hookah_${hookah.id}'),
+            hookah: hookah,
+            onTap: (h) => debugPrint('Hookah tapped: ${h.name}'),
           );
         },
       ),
