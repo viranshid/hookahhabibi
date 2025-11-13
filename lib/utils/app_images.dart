@@ -30,6 +30,8 @@ class APPImages {
   static const imgSapratorLine = '${imageBaseURL}Img_Saprator_Line.png';
   static const imgMenuBg = '${imageBaseURL}Menu_Bg.png';
   static const imgHookahMenuLogo = '${imageBaseURL}img_Hookah_Menu_Logo.png';
+  static const imgPricHookahHabibiHouseMix = '${imageBaseURL}img_price_HookahHabibiHouseMix.png';
+  static const imgPriceMakeYourOwnShisha = '${imageBaseURL}img_price_MakeYourOwnShisha.png';
   static const icErrorBack = '${imageBaseURL}ic_error_back.png';
   static const icErrorForword = '${imageBaseURL}ic_error_forword.png';
   static const imgMenuBtnMinimizeBg = '${imageBaseURL}img_Menu_Btn_Minimize_Bg.png';

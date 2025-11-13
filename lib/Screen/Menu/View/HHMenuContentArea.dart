@@ -53,8 +53,13 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
   static const double _scrollOffset = 80.0;
   static const double _sectionDetectionThreshold = 150.0;
 
-  // Constant to identify Shisha parent category ID
-  static const String SHISHA_PARENT_CATEGORY_ID = "35"; // Based on the API response
+  // Constants for Shisha category IDs
+  static const String SHISHA_PARENT_CATEGORY_ID = "35"; // Parent Shisha category
+  static const String HOOKAH_HOUSE_MIX_ID = "48"; // Hookah Habibi House Mix
+  static const String MAKE_YOUR_OWN_ID = "47"; // Make Your Own
+
+  // IDs for categories that should be moved to Make Your Own subcategories
+  static const List<String> SUB_CATEGORY_IDS = ["49", "50", "51", "52", "53"];
 
   @override
   void initState() {
@@ -298,16 +303,47 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
     return widget.selectedCategoryId == SHISHA_PARENT_CATEGORY_ID;
   }
 
-  // Use the existing getSubCategories method
+  // Modified to return reorganized categories for Shisha section
   List<HHDishCategoryModel> _getSubCategories() {
-    return _appManager.menuManager.getSubCategories();
+    final rawCategories = _appManager.menuManager.getSubCategories();
+
+    // If not in Shisha category, return original categories
+    if (!_isShishaParentCategory) {
+      return rawCategories;
+    }
+
+    // For Shisha category, reorganize the categories
+    final List<HHDishCategoryModel> reorganizedCategories = [];
+
+    // Find the two main categories we want to keep at the top level
+    final hookahHouseMix = rawCategories.firstWhere(
+            (cat) => cat.id == HOOKAH_HOUSE_MIX_ID,
+        orElse: () => rawCategories.firstWhere((c) => true, orElse: () => rawCategories.first)
+    );
+
+    final makeYourOwn = rawCategories.firstWhere(
+            (cat) => cat.id == MAKE_YOUR_OWN_ID,
+        orElse: () => rawCategories.firstWhere((c) => c.id != HOOKAH_HOUSE_MIX_ID, orElse: () => rawCategories.last)
+    );
+
+    // Add House Mix category first
+    reorganizedCategories.add(hookahHouseMix);
+
+    // Add Make Your Own category
+    reorganizedCategories.add(makeYourOwn);
+
+    // Return the reorganized categories
+    return reorganizedCategories;
   }
 
-  // Use the existing getGroupedDishes but modified to match the shisha identification
+  // Modified to return dishes including reorganized subcategories for Make Your Own
   Map<String, List<HHDishModel>> _getGroupedDishes() {
     final apiDishes = _appManager.menuManager.getDisplayDishes();
     final locationManager = _appManager.locationManager;
     final Map<String, List<HHDishModel>> grouped = {};
+
+    // Get all raw subcategories to access those that need to be moved
+    final rawSubCategories = _appManager.menuManager.getSubCategories();
 
     for (var apiDish in apiDishes) {
       if (!locationManager.isDishAvailable(apiDish.id)) continue;
@@ -324,10 +360,31 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
         category: apiDish.dishCatId,
       );
 
-      grouped.putIfAbsent(apiDish.dishCatId, () => []).add(dishModel);
+      // For Shisha category, reorganize dishes
+      if (_isShishaParentCategory) {
+        // If dish belongs to one of the categories that should be moved to Make Your Own
+        if (SUB_CATEGORY_IDS.contains(apiDish.dishCatId)) {
+          // Add it under Make Your Own (47) instead
+          grouped.putIfAbsent(MAKE_YOUR_OWN_ID, () => []).add(dishModel);
+        } else {
+          // Keep other dishes in their original categories
+          grouped.putIfAbsent(apiDish.dishCatId, () => []).add(dishModel);
+        }
+      } else {
+        // For non-Shisha categories, keep original grouping
+        grouped.putIfAbsent(apiDish.dishCatId, () => []).add(dishModel);
+      }
     }
 
     return grouped;
+  }
+
+  // Helper method to get sub-subcategories for Make Your Own
+  List<HHDishCategoryModel> _getSubSubCategories() {
+    if (!_isShishaParentCategory) return [];
+
+    final rawCategories = _appManager.menuManager.getSubCategories();
+    return rawCategories.where((cat) => SUB_CATEGORY_IDS.contains(cat.id)).toList();
   }
 
   // ============= BUILD METHODS =============
@@ -630,11 +687,18 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
       children: tags.map((tag) {
         final dishes = grouped[tag.id] ?? [];
         if (dishes.isEmpty) return const SizedBox.shrink();
-        return _buildDishSection(tag, dishes);
+
+        // Special handling for Make Your Own section in Shisha category
+        if (_isShishaParentCategory && tag.id == MAKE_YOUR_OWN_ID) {
+          return _buildMakeYourOwnSection(tag, dishes);
+        } else {
+          return _buildDishSection(tag, dishes);
+        }
       }).toList(),
     );
   }
 
+  // Regular dish section
   Widget _buildDishSection(HHDishCategoryModel tag, List<HHDishModel> dishes) {
     print('🗿️ Building section for: ${tag.title} (${tag.id}) with key: ${_sectionKeys[tag.id]}');
 
@@ -653,6 +717,48 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
     );
   }
 
+  // Special section for Make Your Own with subcategories
+  Widget _buildMakeYourOwnSection(HHDishCategoryModel tag, List<HHDishModel> allDishes) {
+    print('🗿️ Building Make Your Own section with subcategories');
+
+    // Get all subcategories that should be under Make Your Own
+    final subSubCategories = _getSubSubCategories();
+
+    return Container(
+      key: _sectionKeys[tag.id] ??= GlobalKey(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Main Make Your Own header
+          _buildSeparator(tag.title),
+
+          // For each subcategory, build a section with its own separator
+          ...subSubCategories.map((subCat) {
+            // Filter dishes for this subcategory
+            final subCatDishes = allDishes.where((dish) =>
+            dish.category == subCat.id
+            ).toList();
+
+            if (subCatDishes.isEmpty) return const SizedBox.shrink();
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Subcategory separator with dashed line
+                _buildSubSeparator(subCat.title),
+                // Display hookah cards
+                _buildHookahGrid(subCatDishes),
+                // Add some spacing between subcategories
+                SizedBox(height: Dimens.margin20),
+              ],
+            );
+          }).toList(),
+        ],
+      ),
+    );
+  }
+
+  // Main category separator
   Widget _buildSeparator(String title) {
     return Container(
       margin: const EdgeInsets.only(
@@ -678,6 +784,48 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
           ),
           Expanded(
             child: Container(height: 1, color: AppColors.color33FFFF),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Subcategory separator with dashed line
+  Widget _buildSubSeparator(String title) {
+    return Container(
+      margin: const EdgeInsets.only(
+        top: Dimens.margin20,
+        left: Dimens.margin200, // More indented
+        right: Dimens.margin200,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: CustomPaint(
+              painter: DashedLinePainter(color: AppColors.colorFFFFFF.withOpacity(0.3)),
+              child: Container(height: 1),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: Dimens.margin15),
+            child: Text(
+              title.toUpperCase(),
+              style: TextStyle(
+                fontFamily: 'Oswald',
+                fontWeight: FontWeight.w600,
+                fontSize: Dimens.textSize20,
+                height: 1.0, // 100% line height
+                letterSpacing: 0.0,
+                color: AppColors.colorECC16E, // Using the primary light color
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          Expanded(
+            child: CustomPaint(
+              painter: DashedLinePainter(color: AppColors.colorFFFFFF.withOpacity(0.3)),
+              child: Container(height: 1),
+            ),
           ),
         ],
       ),
@@ -749,10 +897,51 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
           return HHHookahCard(
             key: ValueKey('hookah_${hookah.id}'),
             hookah: hookah,
-            onTap: (h) => debugPrint('Hookah tapped: ${h.name}'),
+            onTap: (h) {
+              _showPopup(h);
+              debugPrint('Hookah tapped: ${h.name}');
+            },
           );
         },
       ),
     );
   }
+
+  // Method to show popup when tapping hookah card
+  void _showPopup(HHHookahModel hookah) {
+    // This is a placeholder that would be replaced by actual implementation
+    // In a real implementation, this would show a detailed popup
+    print('Showing popup for: ${hookah.name}');
+  }
+}
+
+// Custom painter for dashed lines
+class DashedLinePainter extends CustomPainter {
+  final Color color;
+
+  DashedLinePainter({this.color = Colors.grey});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1
+      ..style = PaintingStyle.stroke;
+
+    const dashWidth = 5;
+    const dashSpace = 3;
+    double currentX = 0;
+
+    while (currentX < size.width) {
+      canvas.drawLine(
+          Offset(currentX, size.height / 2),
+          Offset(currentX + dashWidth, size.height / 2),
+          paint
+      );
+      currentX += dashWidth + dashSpace;
+    }
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }
