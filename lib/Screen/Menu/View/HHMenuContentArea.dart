@@ -39,7 +39,8 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
   final GlobalKey _offersKey = GlobalKey();
 
   // Create a global key for the offers widget to ensure it's not recreated
-  final GlobalKey _offersWidgetKey = GlobalKey();
+  // Use ValueKey instead of GlobalKey to avoid conflicts when widget is rebuilt
+  final ValueKey _offersWidgetKey = ValueKey('offers_widget');
 
   String? _selectedTag;
   bool _isLoading = false;
@@ -110,16 +111,18 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
     // Set loading state
     setState(() => _isLoading = true);
 
-    print('ðŸ½ï¸ Loading dishes for category: ${widget.selectedCategoryId}');
+    print('🍽️ Loading dishes for category: ${widget.selectedCategoryId}');
 
     await _appManager.menuManager.loadDishes(
       categoryId: widget.selectedCategoryId!,
     );
 
-    final subCategories = _getSubCategories();
-
+    // Clear existing section keys to avoid issues with stale keys
     _sectionKeys.clear();
+
+    final subCategories = _getSubCategories();
     for (var subCat in subCategories) {
+      // Use ValueKey instead of GlobalKey to avoid conflicts
       _sectionKeys[subCat.id] = GlobalKey();
     }
 
@@ -132,8 +135,8 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
       setState(() => _isLoading = false);
     }
 
-    print('âœ… Dishes loaded successfully');
-    print('ðŸ“‹ Section keys created: ${_sectionKeys.length}');
+    print('✅ Dishes loaded successfully');
+    print('🔑 Section keys created: ${_sectionKeys.length}');
 
     // Scroll to top after loading
     if (_mainScrollController.hasClients) {
@@ -240,7 +243,7 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
 
   void _scrollTagIntoView(String tagId) {
     if (!_tagsScrollController.hasClients) {
-      print('âš ï¸ Tags scroll controller not attached yet');
+      print('⚠️ Tags scroll controller not attached yet');
       return;
     }
 
@@ -260,7 +263,7 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
         );
       }
     } catch (e) {
-      print('âš ï¸ Error scrolling tag into view: $e');
+      print('⚠️ Error scrolling tag into view: $e');
     }
   }
 
@@ -464,7 +467,7 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
       ),
       height: 220,
       child: HHOffers(
-        key: _offersWidgetKey, // Use a persistent global key
+        key: _offersWidgetKey, // Use a ValueKey instead of GlobalKey to avoid conflicts
       ),
     );
   }
@@ -633,7 +636,7 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
 
     return GestureDetector(
       onTap: (_isScrolling || _isLoading) ? null : () {
-        print('ðŸ·ï¸ Tag clicked: ${tag.title} (${tag.id})');
+        print('🏷️ Tag clicked: ${tag.title} (${tag.id})');
         _scrollToSection(tag.id);
       },
       child: AnimatedContainer(
@@ -678,7 +681,7 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
       return _buildNoDishesState();
     }
 
-    print('ðŸ”¨ Building ${tags.length} dish sections');
+    print('🔨 Building ${tags.length} dish sections');
     tags.forEach((tag) {
       print('  - ${tag.title}: ${grouped[tag.id]?.length ?? 0} dishes');
     });
@@ -701,10 +704,15 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
 
   // Regular dish section
   Widget _buildDishSection(HHDishCategoryModel tag, List<HHDishModel> dishes) {
-    print('ðŸ—¿ï¸ Building section for: ${tag.title} (${tag.id}) with key: ${_sectionKeys[tag.id]}');
+    // Make sure we have a key for this section
+    if (_sectionKeys[tag.id] == null) {
+      _sectionKeys[tag.id] = GlobalKey();
+    }
+
+    print('🗿️ Building section for: ${tag.title} (${tag.id}) with key: ${_sectionKeys[tag.id]}');
 
     return Container(
-      key: _sectionKeys[tag.id] ??= GlobalKey(),
+      key: _sectionKeys[tag.id],
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -720,13 +728,18 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
 
   // Special section for Make Your Own with subcategories
   Widget _buildMakeYourOwnSection(HHDishCategoryModel tag, List<HHDishModel> allDishes) {
-    print('ðŸ—¿ï¸ Building Make Your Own section with subcategories');
+    print('🗿️ Building Make Your Own section with subcategories');
+
+    // Make sure we have a key for this section
+    if (_sectionKeys[tag.id] == null) {
+      _sectionKeys[tag.id] = GlobalKey();
+    }
 
     // Get all subcategories that should be under Make Your Own
     final subSubCategories = _getSubSubCategories();
 
     return Container(
-      key: _sectionKeys[tag.id] ??= GlobalKey(),
+      key: _sectionKeys[tag.id],
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -817,7 +830,7 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
         child: Image.asset(
           imagePath,
           height: 50,
-          width: 620,// Adjust height as needed
+          width: 620, // Adjust width as needed
           fit: BoxFit.contain,
         ),
       ),
@@ -829,8 +842,8 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
     return Container(
       margin: const EdgeInsets.only(
         top: Dimens.margin20,
-        left: Dimens.margin250, // More indented
-        right: Dimens.margin250,
+        left: Dimens.margin200, // More indented
+        right: Dimens.margin200,
       ),
       child: Row(
         children: [
@@ -887,6 +900,7 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
         itemCount: dishes.length,
         itemBuilder: (context, index) {
           final dish = dishes[index];
+          // Use ValueKey instead of GlobalKey for list items
           return HHDishCard(
             key: ValueKey('dish_${dish.id}'),
             dish: dish,
@@ -911,7 +925,7 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
         physics: const NeverScrollableScrollPhysics(),
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: widget.isMenuOpen ? 3 : 4, // Same as dish grid
-          childAspectRatio: 3.2, // Aspect ratio for the hookah card (width Ã· height)
+          childAspectRatio: 3.2, // Aspect ratio for the hookah card (width ÷ height)
           crossAxisSpacing: Dimens.margin20,
           mainAxisSpacing: Dimens.margin20,
         ),
@@ -928,6 +942,7 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
             isAvailable: dish.isAvailable,
           );
 
+          // Use ValueKey instead of GlobalKey for list items
           return HHHookahCard(
             key: ValueKey('hookah_${hookah.id}'),
             hookah: hookah,
