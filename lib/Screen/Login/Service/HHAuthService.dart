@@ -15,7 +15,7 @@ class HHAuthService {
   }) async {
     print('\n🔐 AUTH SERVICE: Login request');
     print('   Email: $email');
-    print('   Device Name: ${deviceName ?? 'flutter-tablet'}');
+    print('   Device Name: ${deviceName ?? 'default'}');
 
     try {
       final response = await _apiService.postMultipart(
