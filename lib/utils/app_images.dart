@@ -39,9 +39,11 @@ class APPImages {
   static const icLock = '${imageBaseURL}ic_lock.png';
   static const icMapPin = '${imageBaseURL}ic_Map-Pin.png';
   static const icChilli = '${imageBaseURL}ic_chilli.png';
+  static const icMediumChilli = '${imageBaseURL}icMediumChilli.png';
   static const icVeg = '${imageBaseURL}ic_veg.png';
   static const icErrowDown = '${imageBaseURL}ic_errow_down.png';
   static const icProfile = '${imageBaseURL}ic_profile.png';
+  static const icThumbUp = '${imageBaseURL}ic_thumbUp.png';
   static const icLogout = '${imageBaseURL}ic_logout.png';
 
 

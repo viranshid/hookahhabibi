@@ -21,6 +21,7 @@ class ApiService {
     print('🌐 API POST Request Started');
     print('   Endpoint: $_baseUrl$endpoint');
     print('   Fields: ${fields.keys.join(", ")}');
+    print('   Fields: ${fields.values.join(", ")}');
 
     try {
       final uri = Uri.parse('$_baseUrl$endpoint');

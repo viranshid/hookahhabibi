@@ -37,7 +37,7 @@ class ApiConstants {
   static const String statusError = 'error';
 
   // Device Info
-  static const String defaultDeviceName = 'flutter-tablet';
+  // static String get defaultDeviceName => 'flutter-tablet';
 
   // Timeouts
   static const Duration connectionTimeout = Duration(seconds: 30);

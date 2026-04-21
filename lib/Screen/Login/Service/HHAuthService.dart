@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:hookahhabibi/API/ApiResponseGeneric.dart';
 import 'package:hookahhabibi/API/ApiService.dart';
 import 'package:hookahhabibi/Screen/User/HHUserModel.dart';
@@ -23,8 +24,8 @@ class HHAuthService {
         fields: {
           'email': email,
           'password': password,
-          'device_name': deviceName ?? 'flutter-tablet',
-          'device_token': deviceToken ?? 'default-device-token',
+          'device_name': deviceName ?? "android_${generateSimpleUUID()}",
+          'device_token': deviceToken ?? generateSimpleUUID(),
         },
       );
 
@@ -137,5 +138,11 @@ class HHAuthService {
       print('   ❌ Token validation error: ${e.toString()}');
       return false;
     }
+  }
+
+  String generateSimpleUUID() {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final random = now.toString() + UniqueKey().toString();
+    return random.replaceAll(RegExp(r'[^0-9a-zA-Z]'), '');
   }
 }

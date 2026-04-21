@@ -310,11 +310,11 @@ class _HHDishCardState extends State<HHDishCard>
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (widget.dish.isSpicy)
+                  if (widget.dish.isSpicy != '')
                     Padding(
                       padding: const EdgeInsets.only(right: Dimens.margin8),
                       child: Image.asset(
-                        APPImages.icChilli,
+                        widget.dish.isSpicy,
                         width: Dimens.margin30,
                         height: Dimens.margin30,
                         errorBuilder: (context, error, stackTrace) {
@@ -326,9 +326,9 @@ class _HHDishCardState extends State<HHDishCard>
                         },
                       ),
                     ),
-                  if (widget.dish.isVegetarian)
+                  if (widget.dish.isVegetarian != '')
                     Image.asset(
-                      APPImages.icVeg,
+                      widget.dish.isVegetarian,
                       width: Dimens.margin30,
                       height: Dimens.margin30,
                       errorBuilder: (context, error, stackTrace) {
@@ -543,7 +543,43 @@ class _HHDishCardState extends State<HHDishCard>
                 ),
               ),
               if (!widget.dish.isAvailable) _buildNotAvailableOverlay(),
+              if (widget.dish.isRecomended) _buildRecommendedIcon(),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecommendedIcon() {
+    return Positioned(
+      top: Dimens.margin10,
+      right: Dimens.margin10,
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0.0, end: 1.0),
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.elasticOut,
+        builder: (context, value, child) {
+          return Transform.scale(
+            scale: value,
+            child: child,
+          );
+        },
+        child: Container(
+          width: Dimens.margin44,
+          height: Dimens.margin44,
+          child: Image.asset(
+            APPImages.icThumbUp,
+            width: Dimens.margin44,
+            height: Dimens.margin44,
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) {
+              return const Icon(
+                Icons.thumb_up,
+                color: AppColors.color00541A,
+                size: Dimens.margin20,
+              );
+            },
           ),
         ),
       ),
@@ -653,18 +689,18 @@ class _HHDishCardState extends State<HHDishCard>
   }
 
   Widget _buildIconsRow() {
-    if (!widget.dish.isSpicy && !widget.dish.isVegetarian) {
+    if (widget.dish.isSpicy == '' && widget.dish.isVegetarian == '') {
       return const SizedBox.shrink();
     }
 
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (widget.dish.isSpicy) ...[
+        if (widget.dish.isSpicy != '') ...[
           _buildSpicyIcon(),
-          if (widget.dish.isVegetarian) SizedBox(width: Dimens.margin8),
+          if (widget.dish.isVegetarian != '') SizedBox(width: Dimens.margin8),
         ],
-        if (widget.dish.isVegetarian) _buildVegetarianIcon(),
+        if (widget.dish.isVegetarian != '') _buildVegetarianIcon(),
       ],
     );
   }
@@ -684,7 +720,7 @@ class _HHDishCardState extends State<HHDishCard>
         width: Dimens.margin24,
         height: Dimens.margin24,
         child: Image.asset(
-          APPImages.icChilli,
+          widget.dish.isSpicy,
           width: Dimens.margin24,
           height: Dimens.margin24,
           fit: BoxFit.contain,

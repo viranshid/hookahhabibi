@@ -358,9 +358,10 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
         description: apiDish.description,
         price: apiDish.formattedPrice,
         imageUrl: apiDish.image,
-        isSpicy: apiDish.isSpicy,
-        isVegetarian: apiDish.isVegetarian,
+        isSpicy: apiDish.imgSpicyType,
+        isVegetarian: apiDish.imgDishType,
         isAvailable: apiDish.isAvailable,
+        isRecomended: apiDish.isSuggested,
         category: apiDish.dishCatId,
       );
 

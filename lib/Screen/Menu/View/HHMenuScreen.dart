@@ -4,6 +4,8 @@ import 'package:hookahhabibi/Managers/HHLockManager.dart';
 import 'package:hookahhabibi/Screen/Login/HHLogin.dart';
 import 'package:hookahhabibi/Screen/Location/View/HHLocationScreen.dart';
 import 'package:hookahhabibi/Screen/Menu/Model/HHDishCategoryModel.dart';
+import 'package:hookahhabibi/Screen/Menu/Service/HHMenuLegendModel.dart';
+import 'package:hookahhabibi/Screen/Menu/View/HHMenuLegend.dart';
 import 'package:hookahhabibi/Screen/Menu/View/HHMenuListCard.dart';
 import 'package:hookahhabibi/Screen/Menu/View/HHMenuContentArea.dart';
 import 'package:hookahhabibi/Screen/Menu/View/HHMenuUnlockScreen.dart';
@@ -310,6 +312,14 @@ class _HHMenuScreenState extends State<HHMenuScreen> {
     );
   }
 
+  final List<HHMenuLegendModel> _legends = [
+    HHMenuLegendModel(iconString: APPImages.icVeg, title: 'Vegetarian Friendly'),
+    HHMenuLegendModel(iconString: APPImages.icMediumChilli, title: 'Medium Spicy'),
+    HHMenuLegendModel(iconString: APPImages.icChilli, title: 'Extra Spicy'),
+    HHMenuLegendModel(iconString: APPImages.icThumbUp, title: 'Recommended'),
+    HHMenuLegendModel(title: 'All prices are exclusive of applicable taxes.'),
+  ];
+
   @override
   void dispose() {
     _lockManager.removeListener(_onLockStateChanged);
@@ -347,6 +357,7 @@ class _HHMenuScreenState extends State<HHMenuScreen> {
                   Expanded(
                     child: _buildContent(),
                   ),
+                  HHMenuLegend(legends: _legends),
                 ],
               ),
             ),

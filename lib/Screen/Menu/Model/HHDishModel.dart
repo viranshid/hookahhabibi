@@ -4,9 +4,10 @@ class HHDishModel {
   final String description;
   final String price;
   final String imageUrl;
-  final bool isSpicy;
-  final bool isVegetarian;
+  final String isSpicy;
+  final String isVegetarian;
   final bool isAvailable;
+  final bool isRecomended;
   final String category;
 
   HHDishModel({
@@ -15,9 +16,10 @@ class HHDishModel {
     required this.description,
     required this.price,
     required this.imageUrl,
-    this.isSpicy = false,
-    this.isVegetarian = false,
+    this.isSpicy = '',
+    this.isVegetarian = '',
     this.isAvailable = true,
+    this.isRecomended = false,
     required this.category,
   });
 
@@ -32,6 +34,7 @@ class HHDishModel {
       isSpicy: json['isSpicy'] ?? false,
       isVegetarian: json['isVegetarian'] ?? false,
       isAvailable: json['isAvailable'] ?? true,
+      isRecomended: json['isRecomended'] ?? true,
       category: json['category']?.toString() ?? '',
     );
   }
@@ -47,6 +50,7 @@ class HHDishModel {
       'isSpicy': isSpicy,
       'isVegetarian': isVegetarian,
       'isAvailable': isAvailable,
+      'isRecomended': isRecomended,
       'category': category,
     };
   }
@@ -58,9 +62,10 @@ class HHDishModel {
     String? description,
     String? price,
     String? imageUrl,
-    bool? isSpicy,
-    bool? isVegetarian,
+    String? isSpicy,
+    String? isVegetarian,
     bool? isAvailable,
+    bool? isRecomended,
     String? category,
   }) {
     return HHDishModel(
@@ -72,6 +77,7 @@ class HHDishModel {
       isSpicy: isSpicy ?? this.isSpicy,
       isVegetarian: isVegetarian ?? this.isVegetarian,
       isAvailable: isAvailable ?? this.isAvailable,
+      isRecomended: isAvailable ?? this.isRecomended,
       category: category ?? this.category,
     );
   }

@@ -1,3 +1,5 @@
+import 'package:hookahhabibi/utils/app_images.dart';
+
 /// Dish Category Model
 class HHDishCategoryModel {
   final String id;
@@ -100,6 +102,7 @@ class DishModel {
   final String dishCatId;
   final String parentDishCatId;
   final String isUnavailable;
+  final String isRecommended;
   final String? createdAt;
   final String? updatedAt;
 
@@ -117,6 +120,7 @@ class DishModel {
     required this.dishCatId,
     required this.parentDishCatId,
     required this.isUnavailable,
+    required this.isRecommended,
     this.createdAt,
     this.updatedAt,
   });
@@ -136,6 +140,7 @@ class DishModel {
       dishCatId: json['dish_cat_id']?.toString() ?? '',
       parentDishCatId: json['parent_dish_cat_id']?.toString() ?? '',
       isUnavailable: json['is_unavailable']?.toString() ?? 'n',
+      isRecommended: json['recommended']?.toString() ?? 'n',
       createdAt: json['created_at']?.toString(),
       updatedAt: json['updated_at']?.toString(),
     );
@@ -156,6 +161,7 @@ class DishModel {
       'dish_cat_id': dishCatId,
       'parent_dish_cat_id': parentDishCatId,
       'is_unavailable': isUnavailable,
+      'recommended': isRecommended,
       'created_at': createdAt,
       'updated_at': updatedAt,
     };
@@ -163,6 +169,7 @@ class DishModel {
 
   bool get isActive => status == 'a';
   bool get isAvailable => isUnavailable == 'n';
+  bool get isSuggested => isRecommended == 'y';
   bool get isVegetarian => dishType == 'v';
   bool get isSpicy => spicyType == 'y';
 
@@ -174,6 +181,31 @@ class DishModel {
       return 'RP. $dishPrice';
     }
   }
+
+  // -------------------- OPTIONS MAPS --------------------
+
+  static const Map<String, String> _dishTypeImages = {
+    'n': '',
+    'v': APPImages.icVeg,
+    'g': '',
+    'm': '',
+  };
+
+  static const Map<String, String> _spicyTypeImages = {
+    'n': '',
+    's': '',
+    'm': APPImages.icMediumChilli,
+    'f': APPImages.icChilli,
+  };
+
+
+  // -------------------- IMAGE PATH GETTERS --------------------
+
+  String get imgDishType =>
+      _dishTypeImages[dishType] ?? '';
+
+  String get imgSpicyType =>
+      _spicyTypeImages[spicyType] ?? '';
 
   @override
   String toString() {
