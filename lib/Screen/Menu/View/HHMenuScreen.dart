@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hookahhabibi/Managers/HHAppManager.dart';
 import 'package:hookahhabibi/Managers/HHLockManager.dart';
+import 'package:provider/provider.dart';
 import 'package:hookahhabibi/Screen/Login/HHLogin.dart';
 import 'package:hookahhabibi/Screen/Location/View/HHLocationScreen.dart';
 import 'package:hookahhabibi/Screen/Menu/Model/HHDishCategoryModel.dart';
@@ -37,7 +38,6 @@ class _HHMenuScreenState extends State<HHMenuScreen> {
   String locationName = '';
   String categoryTitle = '';
   final HHAppManager _appManager = HHAppManager();
-  final HHLockManager _lockManager = HHLockManager();
   final GlobalKey _userSectionKey = GlobalKey();
 
   HHDishCategoryModel? selectedMenuItem;
@@ -47,7 +47,6 @@ class _HHMenuScreenState extends State<HHMenuScreen> {
     super.initState();
     locationName = widget.locationName;
     _loadInitialData();
-    _lockManager.addListener(_onLockStateChanged);
   }
 
   Future<void> _loadInitialData() async {
@@ -80,12 +79,9 @@ class _HHMenuScreenState extends State<HHMenuScreen> {
     print('Selected menu: ${category.title}');
   }
 
-  void _onLockStateChanged() {
-    setState(() {});
-  }
-
   Future<void> _handleLockIconTap() async {
-    if (_lockManager.isLocked) {
+    final lockManager = context.read<HHLockManager>();
+    if (lockManager.isLocked) {
       print('Lock icon tapped - Opening unlock screen');
 
       final bool? unlocked = await showDialog<bool>(
@@ -112,18 +108,12 @@ class _HHMenuScreenState extends State<HHMenuScreen> {
     }
   }
 
-  // NEW: Handle location tap
   void _handleLocationTap() {
-    print('\n📍 Location tapped');
-
-    // Only allow navigation if menu is unlocked
-    if (_lockManager.isLocked) {
-      print('   ⚠️ Menu is locked, ignoring location tap');
-      _showSnackBar('Please unlock the menu to change location');
+    final lockManager = context.read<HHLockManager>();
+    if (lockManager.isLocked) {
+        _showSnackBar('Please unlock the menu to change location');
       return;
     }
-
-    print('   ✅ Menu is unlocked, navigating to location screen');
     _navigateToLocationScreen();
   }
 
@@ -222,7 +212,7 @@ class _HHMenuScreenState extends State<HHMenuScreen> {
   Future<void> _handleMenuAction(HHMenuAction action) async {
     switch (action) {
       case HHMenuAction.lockScreen:
-        await _lockManager.lock();
+        await context.read<HHLockManager>().lock();
         _showSnackBar('Menu screen locked');
         print('Menu locked');
         break;
@@ -283,7 +273,7 @@ class _HHMenuScreenState extends State<HHMenuScreen> {
 
     if (confirm == true) {
       await _appManager.logout();
-      await _lockManager.reset();
+      await context.read<HHLockManager>().reset();
 
       if (mounted) {
         Navigator.pushAndRemoveUntil(
@@ -321,13 +311,8 @@ class _HHMenuScreenState extends State<HHMenuScreen> {
   ];
 
   @override
-  void dispose() {
-    _lockManager.removeListener(_onLockStateChanged);
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final lockManager = context.watch<HHLockManager>();
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -353,7 +338,7 @@ class _HHMenuScreenState extends State<HHMenuScreen> {
               bottom: 0,
               child: Column(
                 children: [
-                  _buildHeader(),
+                  _buildHeader(lockManager),
                   Expanded(
                     child: _buildContent(),
                   ),
@@ -392,7 +377,7 @@ class _HHMenuScreenState extends State<HHMenuScreen> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(HHLockManager lockManager) {
     return Container(
       height: Dimens.margin80,
       decoration: BoxDecoration(
@@ -412,9 +397,9 @@ class _HHMenuScreenState extends State<HHMenuScreen> {
           SizedBox(width: Dimens.margin30),
           _buildCategoryTitle(),
           const Spacer(),
-          _buildLocationSection(), // This is now clickable
+          _buildLocationSection(lockManager),
           SizedBox(width: Dimens.margin20),
-          _buildUserSection(),
+          _buildUserSection(lockManager),
           SizedBox(width: Dimens.margin15),
         ],
       ),
@@ -465,7 +450,7 @@ class _HHMenuScreenState extends State<HHMenuScreen> {
     );
   }
 
-  Widget _buildUserSection() {
+  Widget _buildUserSection(HHLockManager lockManager) {
     return GestureDetector(
       key: _userSectionKey,
       onTap: _handleLockIconTap,
@@ -524,14 +509,14 @@ class _HHMenuScreenState extends State<HHMenuScreen> {
                   );
                 },
                 child: Image.asset(
-                  _lockManager.isLocked ? APPImages.icLock : APPImages.icErrowDown,
-                  key: ValueKey(_lockManager.isLocked),
+                  lockManager.isLocked ? APPImages.icLock : APPImages.icErrowDown,
+                  key: ValueKey(lockManager.isLocked),
                   width: Dimens.margin26,
                   height: Dimens.margin26,
                   fit: BoxFit.contain,
                   errorBuilder: (context, error, stackTrace) {
                     return Icon(
-                      _lockManager.isLocked ? Icons.lock : Icons.keyboard_arrow_down,
+                      lockManager.isLocked ? Icons.lock : Icons.keyboard_arrow_down,
                       size: Dimens.margin26,
                       color: AppColors.colorECC16E,
                     );
@@ -545,12 +530,11 @@ class _HHMenuScreenState extends State<HHMenuScreen> {
     );
   }
 
-  // UPDATED: Made location section clickable
-  Widget _buildLocationSection() {
+  Widget _buildLocationSection(HHLockManager lockManager) {
     return GestureDetector(
       onTap: _handleLocationTap,
       child: MouseRegion(
-        cursor: _lockManager.isLocked
+        cursor: lockManager.isLocked
             ? SystemMouseCursors.basic
             : SystemMouseCursors.click,
         child: AnimatedContainer(
@@ -559,7 +543,7 @@ class _HHMenuScreenState extends State<HHMenuScreen> {
             color: Colors.transparent,
             borderRadius: BorderRadius.circular(Dimens.margin8),
             // Add visual feedback when hoverable
-            border: !_lockManager.isLocked
+            border: !lockManager.isLocked
                 ? Border.all(
               color: Colors.transparent,
               width: 2,
@@ -597,7 +581,7 @@ class _HHMenuScreenState extends State<HHMenuScreen> {
                 ),
               ),
               // Add chevron icon when unlocked to indicate clickability
-              if (!_lockManager.isLocked) ...[
+              if (!lockManager.isLocked) ...[
                 SizedBox(width: Dimens.margin4),
                 Icon(
                   Icons.arrow_drop_down,

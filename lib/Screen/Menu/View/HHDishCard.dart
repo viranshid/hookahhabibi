@@ -555,32 +555,21 @@ class _HHDishCardState extends State<HHDishCard>
     return Positioned(
       top: Dimens.margin10,
       right: Dimens.margin10,
-      child: TweenAnimationBuilder<double>(
-        tween: Tween(begin: 0.0, end: 1.0),
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.elasticOut,
-        builder: (context, value, child) {
-          return Transform.scale(
-            scale: value,
-            child: child,
-          );
-        },
-        child: Container(
+      child: SizedBox(
+        width: Dimens.margin44,
+        height: Dimens.margin44,
+        child: Image.asset(
+          APPImages.icThumbUp,
           width: Dimens.margin44,
           height: Dimens.margin44,
-          child: Image.asset(
-            APPImages.icThumbUp,
-            width: Dimens.margin44,
-            height: Dimens.margin44,
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) {
-              return const Icon(
-                Icons.thumb_up,
-                color: AppColors.color00541A,
-                size: Dimens.margin20,
-              );
-            },
-          ),
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) {
+            return const Icon(
+              Icons.thumb_up,
+              color: AppColors.color00541A,
+              size: Dimens.margin20,
+            );
+          },
         ),
       ),
     );
@@ -706,84 +695,62 @@ class _HHDishCardState extends State<HHDishCard>
   }
 
   Widget _buildSpicyIcon() {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.elasticOut,
-      builder: (context, value, child) {
-        return Transform.scale(
-          scale: value,
-          child: child,
-        );
-      },
-      child: SizedBox(
+    return SizedBox(
+      width: Dimens.margin24,
+      height: Dimens.margin24,
+      child: Image.asset(
+        widget.dish.isSpicy,
         width: Dimens.margin24,
         height: Dimens.margin24,
-        child: Image.asset(
-          widget.dish.isSpicy,
-          width: Dimens.margin24,
-          height: Dimens.margin24,
-          fit: BoxFit.contain,
-          errorBuilder: (context, error, stackTrace) {
-            return Container(
-              width: Dimens.margin24,
-              height: Dimens.margin24,
-              decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(Dimens.margin4),
-              ),
-              child: const Icon(
-                Icons.whatshot,
-                color: Colors.red,
-                size: Dimens.margin16,
-              ),
-            );
-          },
-        ),
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            width: Dimens.margin24,
+            height: Dimens.margin24,
+            decoration: BoxDecoration(
+              color: Colors.red.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(Dimens.margin4),
+            ),
+            child: const Icon(
+              Icons.whatshot,
+              color: Colors.red,
+              size: Dimens.margin16,
+            ),
+          );
+        },
       ),
     );
   }
 
   Widget _buildVegetarianIcon() {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.elasticOut,
-      builder: (context, value, child) {
-        return Transform.scale(
-          scale: value,
-          child: child,
-        );
-      },
-      child: SizedBox(
+    return SizedBox(
+      width: Dimens.margin24,
+      height: Dimens.margin24,
+      child: Image.asset(
+        APPImages.icVeg,
         width: Dimens.margin24,
         height: Dimens.margin24,
-        child: Image.asset(
-          APPImages.icVeg,
-          width: Dimens.margin24,
-          height: Dimens.margin24,
-          fit: BoxFit.contain,
-          errorBuilder: (context, error, stackTrace) {
-            return Container(
-              width: Dimens.margin24,
-              height: Dimens.margin24,
-              decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(Dimens.margin4),
-              ),
-              child: Center(
-                child: Container(
-                  width: Dimens.margin12,
-                  height: Dimens.margin12,
-                  decoration: const BoxDecoration(
-                    color: Colors.green,
-                    shape: BoxShape.circle,
-                  ),
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            width: Dimens.margin24,
+            height: Dimens.margin24,
+            decoration: BoxDecoration(
+              color: Colors.green.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(Dimens.margin4),
+            ),
+            child: Center(
+              child: Container(
+                width: Dimens.margin12,
+                height: Dimens.margin12,
+                decoration: const BoxDecoration(
+                  color: Colors.green,
+                  shape: BoxShape.circle,
                 ),
               ),
-            );
-          },
-        ),
+            ),
+          );
+        },
       ),
     );
   }
