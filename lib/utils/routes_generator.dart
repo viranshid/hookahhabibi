@@ -1,5 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:hookahhabibi/Screen/Cart/View/HHCartScreen.dart';
+import 'package:hookahhabibi/Screen/Cart/View/HHCheckoutScreen.dart';
+import 'package:hookahhabibi/Screen/Cart/View/HHViewCartScreen.dart';
 import 'package:hookahhabibi/Screen/Location/View/HHLocationScreen.dart';
+import 'package:hookahhabibi/Screen/Notifications/View/HHNotificationsScreen.dart';
+import 'package:hookahhabibi/Screen/Product/View/HHAllProductScreen.dart';
+import 'package:hookahhabibi/Screen/Product/View/HHProductDetailScreen.dart';
+import 'package:hookahhabibi/Screen/Product/View/HHProductListScreen.dart';
 import 'package:hookahhabibi/Screen/SplashScreen.dart';
 import 'package:hookahhabibi/Screen/Login/HHLogin.dart';
 import 'package:hookahhabibi/Screen/Welcom/View/HHWelcom.dart';
@@ -31,6 +38,43 @@ class RouteGenerator {
       case AppRoutes.routesLocation:
         return ScalePageRouteBuilder(
           builder: (_) => const HHLocationScreen(),
+        );
+
+      case AppRoutes.routesProductList:
+        return FadePageRouteBuilder(
+          builder: (_) => const HHProductListScreen(),
+        );
+
+      case AppRoutes.routesProductDetail:
+        return FadePageRouteBuilder(
+          builder: (_) => HHProductDetailScreen(
+            productId: args is String ? args : null,
+          ),
+        );
+
+      case AppRoutes.routesAllProduct:
+        return FadePageRouteBuilder(
+          builder: (_) => const HHAllProductScreen(),
+        );
+
+      case AppRoutes.routesCart:
+        return FadePageRouteBuilder(
+          builder: (_) => const HHCartScreen(),
+        );
+
+      case AppRoutes.routesViewCart:
+        return FadePageRouteBuilder(
+          builder: (_) => const HHViewCartScreen(),
+        );
+
+      case AppRoutes.routesCheckOut:
+        return FadePageRouteBuilder(
+          builder: (_) => const HHCheckoutScreen(),
+        );
+
+      case AppRoutes.routesNotification:
+        return FadePageRouteBuilder(
+          builder: (_) => const HHNotificationsScreen(),
         );
 
       default:

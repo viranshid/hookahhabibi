@@ -31,8 +31,8 @@ class HHDishModel {
       description: json['description']?.toString() ?? '',
       price: json['price']?.toString() ?? '',
       imageUrl: json['imageUrl']?.toString() ?? '',
-      isSpicy: json['isSpicy'] ?? false,
-      isVegetarian: json['isVegetarian'] ?? false,
+      isSpicy: json['isSpicy']?.toString() ?? '',
+      isVegetarian: json['isVegetarian']?.toString() ?? '',
       isAvailable: json['isAvailable'] ?? true,
       isRecomended: json['isRecomended'] ?? true,
       category: json['category']?.toString() ?? '',
@@ -77,7 +77,7 @@ class HHDishModel {
       isSpicy: isSpicy ?? this.isSpicy,
       isVegetarian: isVegetarian ?? this.isVegetarian,
       isAvailable: isAvailable ?? this.isAvailable,
-      isRecomended: isAvailable ?? this.isRecomended,
+      isRecomended: isRecomended ?? this.isRecomended,
       category: category ?? this.category,
     );
   }

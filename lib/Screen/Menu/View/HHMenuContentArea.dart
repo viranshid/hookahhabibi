@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:hookahhabibi/Managers/HHAppManager.dart';
 import 'package:hookahhabibi/Screen/Menu/Model/HHDishCategoryModel.dart';
 import 'package:hookahhabibi/Screen/Menu/Model/HHDishModel.dart';
@@ -11,8 +10,6 @@ import 'package:hookahhabibi/utils/AppTextStyle.dart';
 import 'package:hookahhabibi/utils/app_colors.dart';
 import 'package:hookahhabibi/utils/app_dimens.dart';
 import 'package:hookahhabibi/utils/app_images.dart';
-
-// Import the new HHHookahCard
 import 'package:hookahhabibi/Screen/Menu/View/HHHookahCard.dart';
 
 class HHMenuContentArea extends StatefulWidget {
@@ -37,30 +34,34 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
   final Map<String, GlobalKey> _sectionKeys = {};
   final GlobalKey _tagsBarKey = GlobalKey();
   final GlobalKey _offersKey = GlobalKey();
+  final ValueKey _offersWidgetKey = const ValueKey('offers_widget');
 
-  // Create a global key for the offers widget to ensure it's not recreated
-  // Use ValueKey instead of GlobalKey to avoid conflicts when widget is rebuilt
-  final ValueKey _offersWidgetKey = ValueKey('offers_widget');
+  // ValueNotifiers — only their subtrees rebuild on change, not the whole tree
+  final ValueNotifier<bool> _isStickyNotifier = ValueNotifier(false);
+  final ValueNotifier<String?> _selectedTagNotifier = ValueNotifier(null);
 
-  String? _selectedTag;
   bool _isLoading = false;
-  bool _isTagsSticky = false;
   bool _isScrolling = false;
   bool _isProgrammaticScroll = false;
+
+  // Cached scroll offsets — computed once per data load via post-frame callback.
+  // The scroll listener uses pure arithmetic against these; no findRenderObject per frame.
+  double? _cachedStickyThreshold;
+  final Map<String, double> _cachedSectionOffsets = {};
+
+  // Memoized data — computed once when data loads, not re-computed on every build().
+  List<HHDishCategoryModel> _cachedSubCategories = [];
+  Map<String, List<HHDishModel>> _cachedGroupedDishes = {};
 
   Timer? _scrollDebouncer;
   String? _lastDetectedTag;
 
   static const double _stickyHeaderHeight = 70.0;
-  static const double _scrollOffset = 80.0;
   static const double _sectionDetectionThreshold = 150.0;
 
-  // Constants for Shisha category IDs
-  static const String SHISHA_PARENT_CATEGORY_ID = "35"; // Parent Shisha category
-  static const String HOOKAH_HOUSE_MIX_ID = "48"; // Hookah Habibi House Mix
-  static const String MAKE_YOUR_OWN_ID = "47"; // Make Your Own
-
-  // IDs for categories that should be moved to Make Your Own subcategories
+  static const String SHISHA_PARENT_CATEGORY_ID = "35";
+  static const String HOOKAH_HOUSE_MIX_ID = "48";
+  static const String MAKE_YOUR_OWN_ID = "47";
   static const List<String> SUB_CATEGORY_IDS = ["49", "50", "51", "52", "53"];
 
   @override
@@ -76,6 +77,9 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
     if (widget.selectedCategoryId != oldWidget.selectedCategoryId) {
       _resetState();
       _loadDishes();
+    } else if (widget.isMenuOpen != oldWidget.isMenuOpen) {
+      // Grid column count changes on sidebar toggle → recache offsets
+      _scheduleOffsetCache();
     }
   }
 
@@ -85,6 +89,8 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
     _mainScrollController.removeListener(_handleScroll);
     _mainScrollController.dispose();
     _tagsScrollController.dispose();
+    _isStickyNotifier.dispose();
+    _selectedTagNotifier.dispose();
     super.dispose();
   }
 
@@ -96,61 +102,86 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
-
-    // Load dishes for selected category
     if (widget.selectedCategoryId != null) {
       await _loadDishes();
     }
-
     setState(() => _isLoading = false);
   }
 
   Future<void> _loadDishes() async {
     if (widget.selectedCategoryId == null) return;
 
-    // Set loading state
     setState(() => _isLoading = true);
-
-    print('🍽️ Loading dishes for category: ${widget.selectedCategoryId}');
 
     await _appManager.menuManager.loadDishes(
       categoryId: widget.selectedCategoryId!,
     );
 
-    // Clear existing section keys to avoid issues with stale keys
     _sectionKeys.clear();
+    _cachedSectionOffsets.clear();
+    _cachedStickyThreshold = null;
 
-    final subCategories = _getSubCategories();
-    for (var subCat in subCategories) {
-      // Use ValueKey instead of GlobalKey to avoid conflicts
+    // Memoize — these methods loop over data; computing once prevents
+    // re-running on every build() triggered by scroll listener updates.
+    _cachedSubCategories = _computeSubCategories();
+    _cachedGroupedDishes = _computeGroupedDishes();
+
+    for (final subCat in _cachedSubCategories) {
       _sectionKeys[subCat.id] = GlobalKey();
     }
 
-    if (subCategories.isNotEmpty && mounted) {
+    if (_cachedSubCategories.isNotEmpty && mounted) {
       setState(() {
-        _selectedTag = subCategories.first.id;
+        _selectedTagNotifier.value = _cachedSubCategories.first.id;
         _isLoading = false;
       });
     } else if (mounted) {
       setState(() => _isLoading = false);
     }
 
-    print('✅ Dishes loaded successfully');
-    print('🔑 Section keys created: ${_sectionKeys.length}');
-
-    // Scroll to top after loading
     if (_mainScrollController.hasClients) {
       _mainScrollController.jumpTo(0);
     }
 
-    await Future.delayed(const Duration(milliseconds: 300));
+    _scheduleOffsetCache();
+  }
+
+  // Reads RenderObject positions exactly once (post-frame) and stores them as
+  // scroll offsets. The scroll listener then does pure arithmetic — no layout
+  // tree walks at 60fps.
+  void _scheduleOffsetCache() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_mainScrollController.hasClients) return;
+
+      final scrollOffset = _mainScrollController.offset;
+
+      final tagsRenderBox =
+          _tagsBarKey.currentContext?.findRenderObject() as RenderBox?;
+      if (tagsRenderBox != null && tagsRenderBox.hasSize) {
+        final tagsScreenY = tagsRenderBox.localToGlobal(Offset.zero).dy;
+        _cachedStickyThreshold = scrollOffset + tagsScreenY;
+      }
+
+      for (final entry in _sectionKeys.entries) {
+        final renderBox =
+            entry.value.currentContext?.findRenderObject() as RenderBox?;
+        if (renderBox != null && renderBox.hasSize) {
+          final screenY = renderBox.localToGlobal(Offset.zero).dy;
+          _cachedSectionOffsets[entry.key] = scrollOffset + screenY;
+        }
+      }
+    });
   }
 
   void _resetState() {
-    _selectedTag = null;
+    _selectedTagNotifier.value = null;
+    _isStickyNotifier.value = false;
     _lastDetectedTag = null;
     _sectionKeys.clear();
-    _isTagsSticky = false;
+    _cachedSectionOffsets.clear();
+    _cachedStickyThreshold = null;
+    _cachedSubCategories = [];
+    _cachedGroupedDishes = {};
     _isScrolling = false;
     _isProgrammaticScroll = false;
     _scrollDebouncer?.cancel();
@@ -159,26 +190,20 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
   // ============= SCROLL HANDLING =============
 
   void _handleScroll() {
-    if (!mounted) return;
+    if (!mounted || !_mainScrollController.hasClients) return;
 
-    // Update sticky state immediately
-    _updateStickyState();
+    final offset = _mainScrollController.offset;
 
-    // Debounce tag updates to prevent flickering
+    // Sticky check — O(1) arithmetic, no findRenderObject
+    if (_cachedStickyThreshold != null) {
+      final shouldBeSticky = offset >= _cachedStickyThreshold!;
+      if (_isStickyNotifier.value != shouldBeSticky) {
+        _isStickyNotifier.value = shouldBeSticky;
+      }
+    }
+
     if (!_isProgrammaticScroll && !_isScrolling) {
       _debounceTagUpdate();
-    }
-  }
-
-  void _updateStickyState() {
-    final renderBox = _tagsBarKey.currentContext?.findRenderObject() as RenderBox?;
-    if (renderBox == null) return;
-
-    final position = renderBox.localToGlobal(Offset.zero);
-    final shouldBeSticky = position.dy <= 0;
-
-    if (_isTagsSticky != shouldBeSticky) {
-      setState(() => _isTagsSticky = shouldBeSticky);
     }
   }
 
@@ -192,90 +217,58 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
   }
 
   void _updateActiveTagOnScroll() {
-    final tags = _getSubCategories();
-    if (tags.isEmpty) return;
+    if (_cachedSectionOffsets.isEmpty || _cachedSubCategories.isEmpty) return;
+    final offset = _mainScrollController.offset;
 
+    // Walk sections in order; last one whose cached offset ≤ scroll + threshold wins.
     String? newActiveTag;
-    double closestDistance = double.infinity;
-
-    for (var tag in tags) {
-      final key = _sectionKeys[tag.id];
-      if (key?.currentContext == null) continue;
-
-      final renderBox = key!.currentContext!.findRenderObject() as RenderBox?;
-      if (renderBox == null || !renderBox.hasSize) continue;
-
-      final position = renderBox.localToGlobal(Offset.zero);
-      final distanceFromThreshold = (position.dy - _sectionDetectionThreshold).abs();
-
-      if (position.dy <= _sectionDetectionThreshold && distanceFromThreshold < closestDistance) {
-        closestDistance = distanceFromThreshold;
+    for (final tag in _cachedSubCategories) {
+      final sectionOffset = _cachedSectionOffsets[tag.id];
+      if (sectionOffset != null &&
+          offset + _sectionDetectionThreshold >= sectionOffset) {
         newActiveTag = tag.id;
-      }
-    }
-
-    if (newActiveTag == null) {
-      for (var tag in tags) {
-        final key = _sectionKeys[tag.id];
-        if (key?.currentContext == null) continue;
-
-        final renderBox = key!.currentContext!.findRenderObject() as RenderBox?;
-        if (renderBox == null || !renderBox.hasSize) continue;
-
-        final position = renderBox.localToGlobal(Offset.zero);
-
-        if (position.dy > 0 && position.dy < MediaQuery.of(context).size.height) {
-          newActiveTag = tag.id;
-          break;
-        }
       }
     }
 
     if (newActiveTag != null && newActiveTag != _lastDetectedTag) {
       _lastDetectedTag = newActiveTag;
-
-      if (mounted && _selectedTag != newActiveTag) {
-        setState(() => _selectedTag = newActiveTag);
-        _scrollTagIntoView(newActiveTag!);
+      if (_selectedTagNotifier.value != newActiveTag) {
+        _selectedTagNotifier.value = newActiveTag;
+        _scrollTagIntoView(newActiveTag);
       }
     }
   }
 
   void _scrollTagIntoView(String tagId) {
-    if (!_tagsScrollController.hasClients) {
-      print('⚠️ Tags scroll controller not attached yet');
-      return;
-    }
+    if (!_tagsScrollController.hasClients) return;
 
-    final tags = _getSubCategories();
-    final tagIndex = tags.indexWhere((t) => t.id == tagId);
+    final tagIndex = _cachedSubCategories.indexWhere((t) => t.id == tagId);
     if (tagIndex == -1) return;
 
     final approximateTagPosition = tagIndex * 150.0;
-    final scrollPosition = approximateTagPosition - (MediaQuery.of(context).size.width / 2) + 75;
+    final scrollPosition =
+        approximateTagPosition - (MediaQuery.of(context).size.width / 2) + 75;
 
     try {
       if (_tagsScrollController.position.hasPixels) {
         _tagsScrollController.animateTo(
-          scrollPosition.clamp(0.0, _tagsScrollController.position.maxScrollExtent),
+          scrollPosition.clamp(
+              0.0, _tagsScrollController.position.maxScrollExtent),
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
         );
       }
-    } catch (e) {
-      print('⚠️ Error scrolling tag into view: $e');
-    }
+    } catch (_) {}
   }
 
   void _scrollToSection(String tagId) {
     if (_isScrolling) return;
 
-    setState(() {
-      _selectedTag = tagId;
-      _lastDetectedTag = tagId;
-      _isScrolling = true;
-      _isProgrammaticScroll = true;
-    });
+    // Update notifier directly — no setState, no full-tree rebuild
+    _selectedTagNotifier.value = tagId;
+    _lastDetectedTag = tagId;
+    _isScrolling = true;
+    _isProgrammaticScroll = true;
 
     final key = _sectionKeys[tagId];
     if (key == null || key.currentContext == null) {
@@ -292,64 +285,37 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
   }
 
   void _resetScrolling() {
-    if (mounted) {
-      setState(() {
-        _isScrolling = false;
-        _isProgrammaticScroll = false;
-      });
-    }
+    _isScrolling = false;
+    _isProgrammaticScroll = false;
   }
 
   // ============= DATA HELPERS =============
 
-  // Check if current category is the Shisha parent category
-  bool get _isShishaParentCategory {
-    return widget.selectedCategoryId == SHISHA_PARENT_CATEGORY_ID;
-  }
+  bool get _isShishaParentCategory =>
+      widget.selectedCategoryId == SHISHA_PARENT_CATEGORY_ID;
 
-  // Modified to return reorganized categories for Shisha section
-  List<HHDishCategoryModel> _getSubCategories() {
+  List<HHDishCategoryModel> _computeSubCategories() {
     final rawCategories = _appManager.menuManager.getSubCategories();
 
-    // If not in Shisha category, return original categories
-    if (!_isShishaParentCategory) {
-      return rawCategories;
-    }
+    if (!_isShishaParentCategory) return rawCategories;
 
-    // For Shisha category, reorganize the categories
-    final List<HHDishCategoryModel> reorganizedCategories = [];
-
-    // Find the two main categories we want to keep at the top level
     final hookahHouseMix = rawCategories.firstWhere(
-            (cat) => cat.id == HOOKAH_HOUSE_MIX_ID,
-        orElse: () => rawCategories.firstWhere((c) => true, orElse: () => rawCategories.first)
-    );
+        (cat) => cat.id == HOOKAH_HOUSE_MIX_ID,
+        orElse: () => rawCategories.first);
 
     final makeYourOwn = rawCategories.firstWhere(
-            (cat) => cat.id == MAKE_YOUR_OWN_ID,
-        orElse: () => rawCategories.firstWhere((c) => c.id != HOOKAH_HOUSE_MIX_ID, orElse: () => rawCategories.last)
-    );
+        (cat) => cat.id == MAKE_YOUR_OWN_ID,
+        orElse: () => rawCategories.last);
 
-    // Add House Mix category first
-    reorganizedCategories.add(hookahHouseMix);
-
-    // Add Make Your Own category
-    reorganizedCategories.add(makeYourOwn);
-
-    // Return the reorganized categories
-    return reorganizedCategories;
+    return [hookahHouseMix, makeYourOwn];
   }
 
-  // Modified to return dishes including reorganized subcategories for Make Your Own
-  Map<String, List<HHDishModel>> _getGroupedDishes() {
+  Map<String, List<HHDishModel>> _computeGroupedDishes() {
     final apiDishes = _appManager.menuManager.getDisplayDishes();
     final locationManager = _appManager.locationManager;
     final Map<String, List<HHDishModel>> grouped = {};
 
-    // Get all raw subcategories to access those that need to be moved
-    final rawSubCategories = _appManager.menuManager.getSubCategories();
-
-    for (var apiDish in apiDishes) {
+    for (final apiDish in apiDishes) {
       if (!locationManager.isDishAvailable(apiDish.id)) continue;
 
       final dishModel = HHDishModel(
@@ -365,18 +331,13 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
         category: apiDish.dishCatId,
       );
 
-      // For Shisha category, reorganize dishes
       if (_isShishaParentCategory) {
-        // If dish belongs to one of the categories that should be moved to Make Your Own
         if (SUB_CATEGORY_IDS.contains(apiDish.dishCatId)) {
-          // Add it under Make Your Own (47) instead
           grouped.putIfAbsent(MAKE_YOUR_OWN_ID, () => []).add(dishModel);
         } else {
-          // Keep other dishes in their original categories
           grouped.putIfAbsent(apiDish.dishCatId, () => []).add(dishModel);
         }
       } else {
-        // For non-Shisha categories, keep original grouping
         grouped.putIfAbsent(apiDish.dishCatId, () => []).add(dishModel);
       }
     }
@@ -384,15 +345,15 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
     return grouped;
   }
 
-  // Helper method to get sub-subcategories for Make Your Own
   List<HHDishCategoryModel> _getSubSubCategories() {
     if (!_isShishaParentCategory) return [];
-
-    final rawCategories = _appManager.menuManager.getSubCategories();
-    return rawCategories.where((cat) => SUB_CATEGORY_IDS.contains(cat.id)).toList();
+    return _appManager.menuManager
+        .getSubCategories()
+        .where((cat) => SUB_CATEGORY_IDS.contains(cat.id))
+        .toList();
   }
 
-  // ============= BUILD METHODS =============
+  // ============= BUILD =============
 
   @override
   Widget build(BuildContext context) {
@@ -405,58 +366,48 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
       child: Stack(
         children: [
           if (_isLoading) ...[
-            // Show offers section even during loading
             _buildPersistentOffersSection(),
-
-            // Show loading indicator below the offers section
             Positioned(
-              top: 240, // Below the offers section
+              top: 240,
               left: 0,
               right: 0,
               bottom: 0,
               child: Center(child: _buildLoadingIndicator()),
             ),
-          ] else if (_getSubCategories().isEmpty) ...[
-            // No categories found - still show offers
+          ] else if (_cachedSubCategories.isEmpty) ...[
             _buildPersistentOffersSection(),
-
-            // Show empty state below offers
             Positioned(
-              top: 240, // Below the offers section
+              top: 240,
               left: 0,
               right: 0,
               bottom: 0,
               child: _buildEmptyState(),
             ),
           ] else ...[
-            // Categories and dishes found, build normal content
             CustomScrollView(
               controller: _mainScrollController,
               physics: const BouncingScrollPhysics(),
               slivers: [
-                // Offers section with persistent state
-                SliverToBoxAdapter(
-                  child: _buildPersistentOffersSection(),
-                ),
-                SliverToBoxAdapter(
-                  child: _buildOriginalTagsBar(),
-                ),
-                SliverToBoxAdapter(
-                  child: _buildAllDishSections(),
-                ),
-                SliverToBoxAdapter(
-                  child: SizedBox(height: Dimens.margin100),
-                ),
+                SliverToBoxAdapter(child: _buildPersistentOffersSection()),
+                SliverToBoxAdapter(child: _buildOriginalTagsBar()),
+                ..._buildAllDishSlivers(),
+                SliverToBoxAdapter(child: SizedBox(height: Dimens.margin100)),
               ],
             ),
-            if (_isTagsSticky) _buildStickyTagsBar(),
+            // Only this small subtree rebuilds on sticky state change
+            ValueListenableBuilder<bool>(
+              valueListenable: _isStickyNotifier,
+              builder: (context, isSticky, _) =>
+                  isSticky ? _buildStickyTagsBar() : const SizedBox.shrink(),
+            ),
           ],
         ],
       ),
     );
   }
 
-  // New method to keep the offers section persistent with a global key
+  // ============= OFFERS =============
+
   Widget _buildPersistentOffersSection() {
     return Container(
       key: _offersKey,
@@ -467,13 +418,11 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
         bottom: Dimens.margin10,
       ),
       height: 220,
-      child: HHOffers(
-        key: _offersWidgetKey, // Use a ValueKey instead of GlobalKey to avoid conflicts
-      ),
+      child: HHOffers(key: _offersWidgetKey),
     );
   }
 
-  // ============= SECTIONS BUILD =============
+  // ============= LOADING / EMPTY =============
 
   Widget _buildLoadingIndicator() {
     return Center(
@@ -518,7 +467,7 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
             ),
             SizedBox(height: Dimens.margin15),
             AppText(
-              text: 'This section doesn\'t have any sub-categories yet',
+              text: "This section doesn't have any sub-categories yet",
               appTextStyle: AppTextStyle.rubikRegular14Light,
               customColor: AppColors.color949494,
               textAlign: TextAlign.center,
@@ -529,7 +478,6 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
     );
   }
 
-  // NEW: Empty state when tags exist but no dishes
   Widget _buildNoDishesState() {
     return Container(
       margin: const EdgeInsets.only(
@@ -554,7 +502,8 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
             ),
             SizedBox(height: Dimens.margin15),
             AppText(
-              text: 'There are no dishes available in this category at the moment',
+              text:
+                  'There are no dishes available in this category at the moment',
               appTextStyle: AppTextStyle.rubikRegular14Light,
               customColor: AppColors.color949494,
               textAlign: TextAlign.center,
@@ -575,12 +524,17 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
         left: Dimens.margin10,
         right: Dimens.margin30,
       ),
-      child: Visibility(
-        visible: !_isTagsSticky,
-        maintainSize: true,
-        maintainState: true,
-        maintainAnimation: true,
-        child: _buildTagsBarContent(),
+      // child is built once and reused; only the Visibility wrapper rebuilds on sticky change
+      child: ValueListenableBuilder<bool>(
+        valueListenable: _isStickyNotifier,
+        builder: (context, isSticky, child) => Visibility(
+          visible: !isSticky,
+          maintainSize: true,
+          maintainState: true,
+          maintainAnimation: true,
+          child: child!,
+        ),
+        child: _buildTagsBarContent(isSticky: false),
       ),
     );
   }
@@ -603,66 +557,73 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
             ),
           ],
         ),
-        child: _buildTagsBarContent(),
+        child: _buildTagsBarContent(isSticky: true),
       ),
     );
   }
 
-  Widget _buildTagsBarContent() {
-    final tags = _getSubCategories();
-
+  Widget _buildTagsBarContent({required bool isSticky}) {
     return Container(
       height: _stickyHeaderHeight,
       padding: const EdgeInsets.symmetric(vertical: Dimens.margin10),
       decoration: BoxDecoration(
-        color: _isTagsSticky ? Colors.transparent : const Color(0xFF011109),
+        color: isSticky ? Colors.transparent : const Color(0xFF011109),
       ),
       child: Center(
-        child: ListView.separated(
-          controller: _tagsScrollController,
-          scrollDirection: Axis.horizontal,
-          physics: const BouncingScrollPhysics(),
-          shrinkWrap: true,
-          padding: const EdgeInsets.symmetric(horizontal: Dimens.margin10),
-          itemCount: tags.length,
-          separatorBuilder: (_, __) => SizedBox(width: Dimens.margin8),
-          itemBuilder: (context, index) => _buildTagChip(tags[index]),
+        // Only the ListView (tag chips) rebuilds when selected tag changes
+        child: ValueListenableBuilder<String?>(
+          valueListenable: _selectedTagNotifier,
+          builder: (context, selectedTag, _) {
+            return ListView.separated(
+              controller: _tagsScrollController,
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              shrinkWrap: true,
+              padding:
+                  const EdgeInsets.symmetric(horizontal: Dimens.margin10),
+              itemCount: _cachedSubCategories.length,
+              separatorBuilder: (_, __) => SizedBox(width: Dimens.margin8),
+              itemBuilder: (context, index) =>
+                  _buildTagChip(_cachedSubCategories[index], selectedTag),
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _buildTagChip(HHDishCategoryModel tag) {
-    final isSelected = _selectedTag == tag.id;
+  Widget _buildTagChip(HHDishCategoryModel tag, String? selectedTag) {
+    final isSelected = selectedTag == tag.id;
 
     return GestureDetector(
-      onTap: (_isScrolling || _isLoading) ? null : () {
-        print('🏷️ Tag clicked: ${tag.title} (${tag.id})');
-        _scrollToSection(tag.id);
-      },
+      onTap: (_isScrolling || _isLoading)
+          ? null
+          : () => _scrollToSection(tag.id),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
         curve: Curves.easeOut,
         height: Dimens.margin40,
         padding: const EdgeInsets.symmetric(horizontal: Dimens.margin20),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.colorECC16E : const Color(0x1AD9D9D9),
+          color:
+              isSelected ? AppColors.colorECC16E : const Color(0x1AD9D9D9),
           borderRadius: BorderRadius.circular(Dimens.margin50),
           boxShadow: isSelected
               ? [
-            BoxShadow(
-              color: AppColors.colorECC16E.withOpacity(0.4),
-              blurRadius: 8,
-              spreadRadius: 1,
-            ),
-          ]
+                  BoxShadow(
+                    color: AppColors.colorECC16E.withOpacity(0.4),
+                    blurRadius: 8,
+                    spreadRadius: 1,
+                  ),
+                ]
               : null,
         ),
         child: Center(
           child: AppText(
             text: tag.title.toUpperCase(),
             appTextStyle: AppTextStyle.oswaldMedium22OffWhite,
-            customColor: isSelected ? AppColors.color00541A : AppColors.colorD9D9D9,
+            customColor:
+                isSelected ? AppColors.color00541A : AppColors.colorD9D9D9,
             customFontSize: Dimens.textSize20,
             textAlign: TextAlign.center,
             applyTextTransform: false,
@@ -672,108 +633,147 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
     );
   }
 
-  // ============= DISH SECTIONS =============
+  // ============= DISH SLIVERS =============
+  // Replaced Column + shrinkWrap GridViews with proper SliverGrid so Flutter
+  // only builds cards that are visible in the viewport (true lazy rendering).
 
-  Widget _buildAllDishSections() {
-    final grouped = _getGroupedDishes();
-    final tags = _getSubCategories();
-
-    if (grouped.isEmpty) {
-      return _buildNoDishesState();
+  List<Widget> _buildAllDishSlivers() {
+    if (_cachedGroupedDishes.isEmpty) {
+      return [SliverToBoxAdapter(child: _buildNoDishesState())];
     }
 
-    print('🔨 Building ${tags.length} dish sections');
-    tags.forEach((tag) {
-      print('  - ${tag.title}: ${grouped[tag.id]?.length ?? 0} dishes');
-    });
+    final List<Widget> slivers = [];
+    for (final tag in _cachedSubCategories) {
+      final dishes = _cachedGroupedDishes[tag.id] ?? [];
+      if (dishes.isEmpty) continue;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: tags.map((tag) {
-        final dishes = grouped[tag.id] ?? [];
-        if (dishes.isEmpty) return const SizedBox.shrink();
-
-        // Special handling for Make Your Own section in Shisha category
-        if (_isShishaParentCategory && tag.id == MAKE_YOUR_OWN_ID) {
-          return _buildMakeYourOwnSection(tag, dishes);
-        } else {
-          return _buildDishSection(tag, dishes);
-        }
-      }).toList(),
-    );
+      if (_isShishaParentCategory && tag.id == MAKE_YOUR_OWN_ID) {
+        slivers.addAll(_buildMakeYourOwnSlivers(tag, dishes));
+      } else {
+        slivers.addAll(_buildDishSectionSlivers(tag, dishes));
+      }
+    }
+    return slivers;
   }
 
-  // Regular dish section
-  Widget _buildDishSection(HHDishCategoryModel tag, List<HHDishModel> dishes) {
-    // Make sure we have a key for this section
-    if (_sectionKeys[tag.id] == null) {
-      _sectionKeys[tag.id] = GlobalKey();
+  List<Widget> _buildDishSectionSlivers(
+      HHDishCategoryModel tag, List<HHDishModel> dishes) {
+    _sectionKeys[tag.id] ??= GlobalKey();
+
+    return [
+      SliverToBoxAdapter(
+        child: Container(
+          key: _sectionKeys[tag.id],
+          child: _buildSeparator(tag.title),
+        ),
+      ),
+      _isShishaParentCategory
+          ? _buildHookahSliver(dishes)
+          : _buildDishSliver(dishes),
+    ];
+  }
+
+  List<Widget> _buildMakeYourOwnSlivers(
+      HHDishCategoryModel tag, List<HHDishModel> allDishes) {
+    _sectionKeys[tag.id] ??= GlobalKey();
+
+    final List<Widget> slivers = [
+      SliverToBoxAdapter(
+        child: Container(
+          key: _sectionKeys[tag.id],
+          child: _buildSeparator(tag.title),
+        ),
+      ),
+    ];
+
+    for (final subCat in _getSubSubCategories()) {
+      final subCatDishes =
+          allDishes.where((d) => d.category == subCat.id).toList();
+      if (subCatDishes.isEmpty) continue;
+
+      slivers
+        ..add(SliverToBoxAdapter(child: _buildSubSeparator(subCat.title)))
+        ..add(_buildHookahSliver(subCatDishes))
+        ..add(SliverToBoxAdapter(child: SizedBox(height: Dimens.margin20)));
     }
 
-    print('🗿️ Building section for: ${tag.title} (${tag.id}) with key: ${_sectionKeys[tag.id]}');
+    return slivers;
+  }
 
-    return Container(
-      key: _sectionKeys[tag.id],
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSeparator(tag.title),
-          // Check if we're in shisha category and use the appropriate card layout
-          _isShishaParentCategory
-              ? _buildHookahGrid(dishes)
-              : _buildDishGrid(dishes),
-        ],
+  Widget _buildDishSliver(List<HHDishModel> dishes) {
+    return SliverPadding(
+      padding: const EdgeInsets.only(
+        top: Dimens.margin30,
+        left: Dimens.margin20,
+        right: Dimens.margin40,
+        bottom: Dimens.margin20,
+      ),
+      sliver: SliverGrid(
+        delegate: SliverChildBuilderDelegate(
+          (context, index) => RepaintBoundary(
+            child: HHDishCard(
+              key: ValueKey('dish_${dishes[index].id}'),
+              dish: dishes[index],
+              onTap: (d) => debugPrint('Dish tapped: ${d.name}'),
+            ),
+          ),
+          childCount: dishes.length,
+        ),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: widget.isMenuOpen ? 3 : 4,
+          childAspectRatio: widget.isMenuOpen ? 0.65 : 0.60,
+          crossAxisSpacing: Dimens.margin20,
+          mainAxisSpacing: Dimens.margin20,
+        ),
       ),
     );
   }
 
-  // Special section for Make Your Own with subcategories
-  Widget _buildMakeYourOwnSection(HHDishCategoryModel tag, List<HHDishModel> allDishes) {
-    print('🗿️ Building Make Your Own section with subcategories');
-
-    // Make sure we have a key for this section
-    if (_sectionKeys[tag.id] == null) {
-      _sectionKeys[tag.id] = GlobalKey();
-    }
-
-    // Get all subcategories that should be under Make Your Own
-    final subSubCategories = _getSubSubCategories();
-
-    return Container(
-      key: _sectionKeys[tag.id],
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Main Make Your Own header
-          _buildSeparator(tag.title),
-
-          // For each subcategory, build a section with its own separator
-          ...subSubCategories.map((subCat) {
-            // Filter dishes for this subcategory
-            final subCatDishes = allDishes.where((dish) =>
-            dish.category == subCat.id
-            ).toList();
-
-            if (subCatDishes.isEmpty) return const SizedBox.shrink();
-
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Subcategory separator with dashed line
-                _buildSubSeparator(subCat.title),
-                // Display hookah cards
-                _buildHookahGrid(subCatDishes),
-                // Add some spacing between subcategories
-                SizedBox(height: Dimens.margin20),
-              ],
+  Widget _buildHookahSliver(List<HHDishModel> dishes) {
+    return SliverPadding(
+      padding: const EdgeInsets.only(
+        top: Dimens.margin30,
+        left: Dimens.margin20,
+        right: Dimens.margin40,
+        bottom: Dimens.margin20,
+      ),
+      sliver: SliverGrid(
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            final dish = dishes[index];
+            final hookah = HHHookahModel(
+              id: dish.id,
+              name: dish.name,
+              description: dish.description,
+              imageUrl: dish.imageUrl,
+              isAvailable: dish.isAvailable,
             );
-          }).toList(),
-        ],
+            return RepaintBoundary(
+              child: HHHookahCard(
+                key: ValueKey('hookah_${hookah.id}'),
+                hookah: hookah,
+                onTap: (h) => _showPopup(h),
+              ),
+            );
+          },
+          childCount: dishes.length,
+        ),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: widget.isMenuOpen ? 3 : 4,
+          childAspectRatio: 3.2,
+          crossAxisSpacing: Dimens.margin20,
+          mainAxisSpacing: Dimens.margin20,
+        ),
       ),
     );
   }
 
-  // Main category separator
+  void _showPopup(HHHookahModel hookah) {
+    debugPrint('Showing popup for: ${hookah.name}');
+  }
+
+  // ============= SEPARATORS =============
+
   Widget _buildSeparator(String title) {
     return Column(
       children: [
@@ -786,10 +786,10 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
           child: Row(
             children: [
               Expanded(
-                child: Container(height: 1, color: AppColors.color33FFFF),
-              ),
+                  child: Container(height: 1, color: AppColors.color33FFFF)),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: Dimens.margin20),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: Dimens.margin20),
                 child: AppText(
                   text: title.toUpperCase(),
                   appTextStyle: AppTextStyle.oswaldMedium22OffWhite,
@@ -800,29 +800,24 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
                 ),
               ),
               Expanded(
-                child: Container(height: 1, color: AppColors.color33FFFF),
-              ),
+                  child: Container(height: 1, color: AppColors.color33FFFF)),
             ],
           ),
         ),
-        // Add price image for Shisha categories
-        if (_isShishaParentCategory)
-          _buildPriceImage(title),
+        if (_isShishaParentCategory) _buildPriceImage(title),
       ],
     );
   }
 
-  // Helper to show price image for shisha categories
   Widget _buildPriceImage(String categoryTitle) {
     String? imagePath;
 
-    // Determine which image to show based on the category title
     if (categoryTitle.toLowerCase().contains("hookah habibi house mix")) {
       imagePath = APPImages.imgPricHookahHabibiHouseMix;
     } else if (categoryTitle.toLowerCase().contains("make your own")) {
       imagePath = APPImages.imgPriceMakeYourOwnShisha;
     } else {
-      return SizedBox.shrink(); // No image for other categories
+      return const SizedBox.shrink();
     }
 
     return Padding(
@@ -831,47 +826,49 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
         child: Image.asset(
           imagePath,
           height: 50,
-          width: 620, // Adjust width as needed
+          width: 620,
           fit: BoxFit.contain,
         ),
       ),
     );
   }
 
-  // Subcategory separator with dashed line
   Widget _buildSubSeparator(String title) {
     return Container(
       margin: const EdgeInsets.only(
         top: Dimens.margin20,
-        left: Dimens.margin200, // More indented
+        left: Dimens.margin200,
         right: Dimens.margin200,
       ),
       child: Row(
         children: [
           Expanded(
             child: CustomPaint(
-              painter: DashedLinePainter(color: AppColors.colorBB7A24.withOpacity(0.5)),
+              painter: DashedLinePainter(
+                  color: AppColors.colorBB7A24.withOpacity(0.5)),
               child: Container(height: 1),
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: Dimens.margin15),
+            padding:
+                const EdgeInsets.symmetric(horizontal: Dimens.margin15),
             child: Text(
               title.toUpperCase(),
               style: TextStyle(
                 fontFamily: 'Oswald',
                 fontWeight: FontWeight.w600,
                 fontSize: Dimens.textSize20,
-                height: 1.0, // 100% line height
+                height: 1.0,
                 letterSpacing: 0.0,
-                color: AppColors.colorBB7A24, // Using the primary light color
+                color: AppColors.colorBB7A24,
               ),
               textAlign: TextAlign.center,
             ),
           ),
           Expanded(
             child: CustomPaint(
-              painter: DashedLinePainter(color: AppColors.colorBB7A24.withOpacity(0.5)),
+              painter: DashedLinePainter(
+                  color: AppColors.colorBB7A24.withOpacity(0.5)),
               child: Container(height: 1),
             ),
           ),
@@ -879,93 +876,8 @@ class HHMenuContentAreaState extends State<HHMenuContentArea> {
       ),
     );
   }
-
-  // Original dish grid for regular menu items
-  Widget _buildDishGrid(List<HHDishModel> dishes) {
-    return Padding(
-      padding: const EdgeInsets.only(
-        top: Dimens.margin30,
-        left: Dimens.margin20,
-        right: Dimens.margin40,
-        bottom: Dimens.margin20,
-      ),
-      child: GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: widget.isMenuOpen ? 3 : 4,
-          childAspectRatio: widget.isMenuOpen ? 0.65 : 0.60,
-          crossAxisSpacing: Dimens.margin20,
-          mainAxisSpacing: Dimens.margin20,
-        ),
-        itemCount: dishes.length,
-        itemBuilder: (context, index) {
-          final dish = dishes[index];
-          // Use ValueKey instead of GlobalKey for list items
-          return HHDishCard(
-            key: ValueKey('dish_${dish.id}'),
-            dish: dish,
-            onTap: (d) => debugPrint('Dish tapped: ${d.name}'),
-          );
-        },
-      ),
-    );
-  }
-
-  // Hookah grid for shisha menu items using HHHookahCard in a grid layout
-  Widget _buildHookahGrid(List<HHDishModel> dishes) {
-    return Padding(
-      padding: const EdgeInsets.only(
-        top: Dimens.margin30,
-        left: Dimens.margin20,
-        right: Dimens.margin40,
-        bottom: Dimens.margin20,
-      ),
-      child: GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: widget.isMenuOpen ? 3 : 4, // Same as dish grid
-          childAspectRatio: 3.2, // Aspect ratio for the hookah card (width ÷ height)
-          crossAxisSpacing: Dimens.margin20,
-          mainAxisSpacing: Dimens.margin20,
-        ),
-        itemCount: dishes.length,
-        itemBuilder: (context, index) {
-          final dish = dishes[index];
-
-          // Convert HHDishModel to HHHookahModel
-          final hookah = HHHookahModel(
-            id: dish.id,
-            name: dish.name,
-            description: dish.description,
-            imageUrl: dish.imageUrl,
-            isAvailable: dish.isAvailable,
-          );
-
-          // Use ValueKey instead of GlobalKey for list items
-          return HHHookahCard(
-            key: ValueKey('hookah_${hookah.id}'),
-            hookah: hookah,
-            onTap: (h) {
-              _showPopup(h);
-              debugPrint('Hookah tapped: ${h.name}');
-            },
-          );
-        },
-      ),
-    );
-  }
-
-  // Method to show popup when tapping hookah card
-  void _showPopup(HHHookahModel hookah) {
-    // This is a placeholder that would be replaced by actual implementation
-    // In a real implementation, this would show a detailed popup
-    print('Showing popup for: ${hookah.name}');
-  }
 }
 
-// Custom painter for dashed lines
 class DashedLinePainter extends CustomPainter {
   final Color color;
 
@@ -986,8 +898,7 @@ class DashedLinePainter extends CustomPainter {
       canvas.drawLine(
           Offset(currentX, size.height / 2),
           Offset(currentX + dashWidth, size.height / 2),
-          paint
-      );
+          paint);
       currentX += dashWidth + dashSpace;
     }
   }

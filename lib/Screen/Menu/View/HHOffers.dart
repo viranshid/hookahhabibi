@@ -3,6 +3,7 @@ import 'package:hookahhabibi/Managers/HHAppManager.dart';
 import 'package:hookahhabibi/Screen/Menu/Model/HHOfferModel.dart';
 import 'package:hookahhabibi/utils/AppText.dart';
 import 'package:hookahhabibi/utils/AppTextStyle.dart';
+import 'package:hookahhabibi/utils/ImageCacheManager.dart';
 import 'package:hookahhabibi/utils/app_colors.dart';
 import 'package:hookahhabibi/utils/app_dimens.dart';
 
@@ -174,113 +175,90 @@ class _HHOffersState extends State<HHOffers> {
         physics: const BouncingScrollPhysics(),
         itemCount: _offers.length,
         separatorBuilder: (_, __) => SizedBox(width: Dimens.margin20),
-        itemBuilder: (context, index) => _buildOfferCard(_offers[index]),
+        // index-based: no O(n) indexOf inside the builder
+        itemBuilder: (context, index) => _buildOfferCard(_offers[index], index),
       ),
     );
   }
 
-  Widget _buildOfferCard(HHOfferModel offer) {
-    return TweenAnimationBuilder<double>(
+  Widget _buildOfferCard(HHOfferModel offer, int index) {
+    return Container(
       key: ValueKey('offer_${offer.id}'),
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: Duration(milliseconds: 300 + (50 * (_offers.indexOf(offer)))),
-      curve: Curves.easeOut,
-      builder: (context, value, child) {
-        return Transform.translate(
-          offset: Offset(20 * (1 - value), 0),
-          child: Opacity(
-            opacity: value,
-            child: child,
+      width: Dimens.margin420,
+      height: Dimens.margin160,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(Dimens.margin10),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
           ),
-        );
-      },
-      child: Container(
-        width: Dimens.margin420,
-        height: Dimens.margin160,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(Dimens.margin10),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(Dimens.margin10),
-          child: Stack(
-            children: [
-              Image.network(
-                offer.image,
-                width: double.infinity,
-                height: double.infinity,
-                fit: BoxFit.fill,
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return Container(
-                    color: AppColors.color949494.withOpacity(0.3),
-                    child: Center(
-                      child: CircularProgressIndicator(
-                        value: loadingProgress.expectedTotalBytes != null
-                            ? loadingProgress.cumulativeBytesLoaded /
-                            loadingProgress.expectedTotalBytes!
-                            : null,
-                        valueColor: const AlwaysStoppedAnimation<Color>(
-                            AppColors.colorECC16E),
-                      ),
-                    ),
-                  );
-                },
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: AppColors.color949494.withOpacity(0.3),
-                    child: const Center(
-                      child: Icon(
-                        Icons.local_offer,
-                        color: AppColors.colorECC16E,
-                        size: 40,
-                      ),
-                    ),
-                  );
-                },
-              ),
-              // Optional: Add title overlay if needed
-              if (offer.title.isNotEmpty)
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: Dimens.margin15,
-                      vertical: Dimens.margin10,
-                    ),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.bottomCenter,
-                        end: Alignment.topCenter,
-                        colors: [
-                          Colors.black.withOpacity(0.7),
-                          Colors.transparent,
-                        ],
-                      ),
-                    ),
-                    child: Text(
-                      offer.title,
-                      style: const TextStyle(
-                        fontFamily: 'Oswald',
-                        fontWeight: FontWeight.w600,
-                        fontSize: Dimens.textSize18,
-                        color: AppColors.colorECC16E,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(Dimens.margin10),
+        child: Stack(
+          children: [
+            ImageCacheManager.getNetworkImage(
+              url: offer.image,
+              width: double.infinity,
+              height: double.infinity,
+              fit: BoxFit.fill,
+              placeholder: Container(
+                color: AppColors.color949494.withOpacity(0.3),
+                child: const Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                        AppColors.colorECC16E),
                   ),
                 ),
-            ],
-          ),
+              ),
+              errorWidget: Container(
+                color: AppColors.color949494.withOpacity(0.3),
+                child: const Center(
+                  child: Icon(
+                    Icons.local_offer,
+                    color: AppColors.colorECC16E,
+                    size: 40,
+                  ),
+                ),
+              ),
+            ),
+            if (offer.title.isNotEmpty)
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: Dimens.margin15,
+                    vertical: Dimens.margin10,
+                  ),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                      colors: [
+                        Colors.black.withOpacity(0.7),
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
+                  child: Text(
+                    offer.title,
+                    style: const TextStyle(
+                      fontFamily: 'Oswald',
+                      fontWeight: FontWeight.w600,
+                      fontSize: Dimens.textSize18,
+                      color: AppColors.colorECC16E,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
