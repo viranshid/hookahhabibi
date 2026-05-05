@@ -10,6 +10,7 @@ class HHStorageManager {
   static const String _keyBearerToken = 'bearer_token';
   static const String _keyUserData = 'user_data';
   static const String _keySelectedLocation = 'selected_location';
+  static const String _keySelectedUserType = 'selected_user_type';
   static const String _keyIsLocked = 'is_locked';
   static const String _keyFailedAttempts = 'failed_attempts';
   static const String _keyLockoutTime = 'lockout_time';
@@ -81,6 +82,22 @@ class HHStorageManager {
   Future<void> clearSelectedLocation() async {
     final prefs = await _preferences;
     await prefs.remove(_keySelectedLocation);
+  }
+
+  // User Type Management
+  Future<void> saveSelectedUserType(String userType) async {
+    final prefs = await _preferences;
+    await prefs.setString(_keySelectedUserType, userType);
+  }
+
+  Future<String?> getSelectedUserType() async {
+    final prefs = await _preferences;
+    return prefs.getString(_keySelectedUserType);
+  }
+
+  Future<void> clearSelectedUserType() async {
+    final prefs = await _preferences;
+    await prefs.remove(_keySelectedUserType);
   }
 
   // Lock State Management

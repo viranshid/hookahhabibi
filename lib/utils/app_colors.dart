@@ -26,6 +26,7 @@ class AppColors {
   static const color5E0000 = Color(0x5E000000);
   static const color660000 = Color(0x66000000);
   static const color00541A = Color(0xFF00541A);
+  static const color00541A80 = Color(0x8000541A); // Dark green 50% opacity
   static const color004216 = Color(0xFF004216);
   static const color33FFFF = Color(0x33FFFFFF);
   static const color01110A = Color(0xFF01110A);

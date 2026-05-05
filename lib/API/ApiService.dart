@@ -51,9 +51,20 @@ class ApiService {
 
       return result;
     } on SocketException catch (e) {
-      print('   ❌ Network Error: No internet connection');
-      print('   Error details: $e');
-      throw ApiException('No internet connection', 'NETWORK_ERROR');
+      final errorMsg = e.toString();
+      if (errorMsg.contains('Failed host lookup') || errorMsg.contains('No address associated')) {
+        print('   ❌ DNS Error: Cannot resolve hostname');
+        print('   Error details: $e');
+        throw ApiException('DNS resolution failed - hostname cannot be resolved', 'DNS_ERROR');
+      } else if (errorMsg.contains('Connection refused')) {
+        print('   ❌ Connection Error: Server refused connection');
+        print('   Error details: $e');
+        throw ApiException('Connection refused', 'CONNECTION_REFUSED');
+      } else {
+        print('   ❌ Network Error: ${e.osError?.message ?? "Unknown network error"}');
+        print('   Error details: $e');
+        throw ApiException('Network error: ${e.osError?.message ?? "Unknown"}', 'NETWORK_ERROR');
+      }
     } on TimeoutException catch (e) {
       print('   ❌ Timeout Error: Request took too long');
       print('   Error details: $e');
@@ -103,9 +114,20 @@ class ApiService {
 
       return result;
     } on SocketException catch (e) {
-      print('   ❌ Network Error: No internet connection');
-      print('   Error details: $e');
-      throw ApiException('No internet connection', 'NETWORK_ERROR');
+      final errorMsg = e.toString();
+      if (errorMsg.contains('Failed host lookup') || errorMsg.contains('No address associated')) {
+        print('   ❌ DNS Error: Cannot resolve hostname');
+        print('   Error details: $e');
+        throw ApiException('DNS resolution failed - hostname cannot be resolved', 'DNS_ERROR');
+      } else if (errorMsg.contains('Connection refused')) {
+        print('   ❌ Connection Error: Server refused connection');
+        print('   Error details: $e');
+        throw ApiException('Connection refused', 'CONNECTION_REFUSED');
+      } else {
+        print('   ❌ Network Error: ${e.osError?.message ?? "Unknown network error"}');
+        print('   Error details: $e');
+        throw ApiException('Network error: ${e.osError?.message ?? "Unknown"}', 'NETWORK_ERROR');
+      }
     } on TimeoutException catch (e) {
       print('   ❌ Timeout Error: Request took too long');
       print('   Error details: $e');

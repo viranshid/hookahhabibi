@@ -6,7 +6,7 @@ import 'package:hookahhabibi/Screen/Location/View/HHLocationScreen.dart';
 import 'package:hookahhabibi/Screen/Notifications/View/HHNotificationsScreen.dart';
 import 'package:hookahhabibi/Screen/Product/View/HHAllProductScreen.dart';
 import 'package:hookahhabibi/Screen/Product/View/HHProductDetailScreen.dart';
-import 'package:hookahhabibi/Screen/Product/View/HHProductListScreen.dart';
+import 'package:hookahhabibi/Screen/Product/View/HHStaffMenuScreen.dart';
 import 'package:hookahhabibi/Screen/SplashScreen.dart';
 import 'package:hookahhabibi/Screen/Login/HHLogin.dart';
 import 'package:hookahhabibi/Screen/Welcom/View/HHWelcom.dart';
@@ -40,9 +40,9 @@ class RouteGenerator {
           builder: (_) => const HHLocationScreen(),
         );
 
-      case AppRoutes.routesProductList:
+      case AppRoutes.routesStaffMenu:
         return FadePageRouteBuilder(
-          builder: (_) => const HHProductListScreen(),
+          builder: (_) => const HHStaffMenuScreen(),
         );
 
       case AppRoutes.routesProductDetail:

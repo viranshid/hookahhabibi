@@ -23,6 +23,8 @@ enum AppTextStyle {
   // Oswald Font Styles
   oswaldBold54White,
   oswaldBold20Light,
+  oswaldBold26Light,
+  oswaldBold22OffWhite,
   oswaldSemiBold26Light,
   oswaldMedium22OffWhite,
   oswaldRegular16OffWhite,
@@ -196,6 +198,26 @@ class AppTextStyleManager {
           height: 1.0, // 100%
           letterSpacing: 0,
           color: AppColors.colorECC16E,
+        );
+
+      case AppTextStyle.oswaldBold26Light:
+        return TextStyle(
+          fontFamily: _oswaldFont,
+          fontWeight: FontWeight.w700,
+          fontSize: 26,
+          height: 1.0, // 100%
+          letterSpacing: 0,
+          color: AppColors.colorECC16E,
+        );
+
+      case AppTextStyle.oswaldBold22OffWhite:
+        return TextStyle(
+          fontFamily: _oswaldFont,
+          fontWeight: FontWeight.w700,
+          fontSize: 22,
+          height: 1.0, // 100%
+          letterSpacing: 0,
+          color: AppColors.colorF4F5F7,
         );
 
       case AppTextStyle.oswaldRegular14UppercaseLight:

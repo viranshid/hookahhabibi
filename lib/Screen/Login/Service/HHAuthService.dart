@@ -24,7 +24,7 @@ class HHAuthService {
         fields: {
           'email': email,
           'password': password,
-          'device_name': deviceName ?? "android_${generateSimpleUUID()}",
+          'device_name': deviceName ?? 'android_${generateSimpleUUID().substring(0, 12)}',
           'device_token': deviceToken ?? generateSimpleUUID(),
         },
       );

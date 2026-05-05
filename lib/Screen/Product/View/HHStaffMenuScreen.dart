@@ -3,8 +3,8 @@ import 'package:hookahhabibi/utils/AppText.dart';
 import 'package:hookahhabibi/utils/AppTextStyle.dart';
 import 'package:hookahhabibi/utils/app_colors.dart';
 
-class HHProductListScreen extends StatelessWidget {
-  const HHProductListScreen({Key? key}) : super(key: key);
+class HHStaffMenuScreen extends StatelessWidget {
+  const HHStaffMenuScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

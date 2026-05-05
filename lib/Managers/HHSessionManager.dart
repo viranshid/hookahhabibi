@@ -15,12 +15,14 @@ class HHSessionManager extends ChangeNotifier {
   String? _bearerToken;
   HHUserModel? _currentUser;
   HHLocationModel? _selectedLocation;
+  String? _selectedUserType;
   bool _isInitialized = false;
 
   // Getters
   String? get bearerToken => _bearerToken;
   HHUserModel? get currentUser => _currentUser;
   HHLocationModel? get selectedLocation => _selectedLocation;
+  String? get selectedUserType => _selectedUserType;
   bool get isLoggedIn => _bearerToken != null && _bearerToken!.isNotEmpty;
   bool get hasSelectedLocation => _selectedLocation != null;
   bool get isInitialized => _isInitialized;
@@ -44,6 +46,9 @@ class HHSessionManager extends ChangeNotifier {
       if (locationData != null) {
         _selectedLocation = HHLocationModel.fromJson(locationData);
       }
+
+      // Load selected user type
+      _selectedUserType = await _storage.getSelectedUserType();
 
       _isInitialized = true;
       notifyListeners();
@@ -74,6 +79,13 @@ class HHSessionManager extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Set selected user type
+  Future<void> setUserType(String userType) async {
+    _selectedUserType = userType;
+    await _storage.saveSelectedUserType(userType);
+    notifyListeners();
+  }
+
   /// Login
   Future<void> login({
     required String bearerToken,
@@ -93,10 +105,12 @@ class HHSessionManager extends ChangeNotifier {
     _bearerToken = null;
     _currentUser = null;
     _selectedLocation = null;
+    _selectedUserType = null;
 
     await _storage.clearBearerToken();
     await _storage.clearUserData();
     await _storage.clearSelectedLocation();
+    await _storage.clearSelectedUserType();
 
     notifyListeners();
   }

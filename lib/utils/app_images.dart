@@ -46,6 +46,15 @@ class APPImages {
   static const icThumbUp = '${imageBaseURL}ic_thumbUp.png';
   static const icLogout = '${imageBaseURL}ic_logout.png';
 
+  //Location Screen - User Type
+  static const icStaffMember = '${imageBaseURL}ic_staff_member.png';
+  static const icCustomer = '${imageBaseURL}ic_customer.png';
+
+  //Table Order Selection Screen - Tab Icons
+  static const icTableIcon = '${imageBaseURL}table_icon.png';
+  static const icMenuIcon = '${imageBaseURL}menu_icon.png';
+  static const icOrderIcon = '${imageBaseURL}order_icon.png';
+  static const icHeaderLogo = '${imageBaseURL}logo_member.png';
 
   //Temp Images
   static const temp1 = '${imageBaseURL}temp1.jpg';

@@ -2,13 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:hookahhabibi/Managers/HHAppManager.dart';
 import 'package:hookahhabibi/Screen/Location/Model/HHLocationCardModel.dart';
 import 'package:hookahhabibi/Enums/HHButtonType.dart';
+import 'package:hookahhabibi/Enums/HHUserTypeEnum.dart';
 import 'package:hookahhabibi/Screen/Location/View/HHLocationCard.dart';
+import 'package:hookahhabibi/Screen/Location/View/HHUserTypeCard.dart';
 import 'package:hookahhabibi/Screen/Welcom/View/HHWelcom.dart';
 import 'package:hookahhabibi/utils/AppText.dart';
 import 'package:hookahhabibi/utils/AppTextStyle.dart';
 import 'package:hookahhabibi/utils/app_colors.dart';
 import 'package:hookahhabibi/utils/app_dimens.dart';
 import 'package:hookahhabibi/utils/app_images.dart';
+import 'package:hookahhabibi/utils/app_routes.dart';
+import 'package:hookahhabibi/utils/app_Strings.dart';
 import 'package:hookahhabibi/widgets/HHButton.dart';
 
 class HHLocationScreen extends StatefulWidget {
@@ -22,9 +26,11 @@ class _HHLocationScreenState extends State<HHLocationScreen> {
   final HHAppManager _appManager = HHAppManager();
   List<HHLocationCardModel> _displayLocations = [];
   String? _selectedLocationId;
+  HHUserType? _selectedUserType;
   bool _isLoading = true;
   String? _errorMessage;
   int _loadAttempts = 0;
+  int? _selectedLocationIndex; // Track selected index to avoid unnecessary rebuilds
 
   @override
   void initState() {
@@ -94,7 +100,7 @@ class _HHLocationScreenState extends State<HHLocationScreen> {
 
     // Auto-select first location
     if (_displayLocations.isNotEmpty) {
-      _displayLocations[0] = _displayLocations[0].copyWith(isSelected: true);
+      _selectedLocationIndex = 0;
       _selectedLocationId = _displayLocations[0].id;
       print('   ✅ Auto-selected first location: ${_displayLocations[0].title}');
     } else {
@@ -279,7 +285,7 @@ class _HHLocationScreenState extends State<HHLocationScreen> {
         child: Padding(
           padding: const EdgeInsets.only(left: Dimens.margin26),
           child: AppText(
-            text: 'Set Location',
+            text: APPStrings.locationScreenTitle,
             appTextStyle: AppTextStyle.jostBold26Heading,
           ),
         ),
@@ -295,6 +301,7 @@ class _HHLocationScreenState extends State<HHLocationScreen> {
           children: [
             _buildContentTitle(),
             _buildLocationsList(),
+            _buildUserTypeSection(),
             _buildContinueButton(),
           ],
         ),
@@ -309,7 +316,7 @@ class _HHLocationScreenState extends State<HHLocationScreen> {
         bottom: Dimens.margin30,
       ),
       child: AppText(
-        text: 'Select Restaurant Location',
+        text: APPStrings.selectRestaurantLocation,
         appTextStyle: AppTextStyle.jostBold36Heading,
         textAlign: TextAlign.center,
       ),
@@ -327,23 +334,24 @@ class _HHLocationScreenState extends State<HHLocationScreen> {
           itemCount: _displayLocations.length,
           separatorBuilder: (context, index) => const SizedBox(height: Dimens.margin16),
           itemBuilder: (context, index) {
+            // Determine if this location is selected based on index
+            final isSelected = _selectedLocationIndex == index;
+            final locationModel = _displayLocations[index].copyWith(isSelected: isSelected);
+
             return HHLocationCard(
-              location: _displayLocations[index],
-              onSelectionChanged: (location, isSelected) {
+              location: locationModel,
+              onSelectionChanged: (location, _) {
                 print('\n📍 Location selection changed: ${location.title}');
-                print('   Is Selected: $isSelected');
+                print('   Index: $index');
 
-                setState(() {
-                  // Deselect all other locations
-                  for (int i = 0; i < _displayLocations.length; i++) {
-                    _displayLocations[i] = _displayLocations[i].copyWith(isSelected: false);
-                  }
-                  // Select the current location
-                  _displayLocations[index] = location.copyWith(isSelected: isSelected);
-                  _selectedLocationId = location.id;
-
-                  print('   ✅ Selected Location ID: $_selectedLocationId');
-                });
+                // Only update if selection actually changed to avoid unnecessary rebuilds
+                if (_selectedLocationIndex != index) {
+                  setState(() {
+                    _selectedLocationIndex = index;
+                    _selectedLocationId = location.id;
+                    print('   ✅ Selected Location ID: $_selectedLocationId');
+                  });
+                }
               },
               onTap: (location) {
                 print('   👆 Location tapped: ${location.title} (${location.id})');
@@ -352,6 +360,62 @@ class _HHLocationScreenState extends State<HHLocationScreen> {
           },
         ),
       ),
+    );
+  }
+
+  Widget _buildUserTypeSection() {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(
+            top: Dimens.margin30,
+            bottom: Dimens.margin20,
+          ),
+          child: Text(
+            APPStrings.selectUserType,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontFamily: 'Jost',
+              fontWeight: FontWeight.bold,
+              fontSize: 30,
+              color: AppColors.color00541A,
+            ),
+          ),
+        ),
+        Row(
+          children: [
+            Expanded(
+              child: HHUserTypeCard(
+                userType: HHUserType.staff,
+                label: APPStrings.staffMember,
+                assetIcon: APPImages.icStaffMember,
+                isSelected: _selectedUserType == HHUserType.staff,
+                onTap: () {
+                  print('\n👨‍💼 Staff Member selected');
+                  setState(() {
+                    _selectedUserType = HHUserType.staff;
+                  });
+                },
+              ),
+            ),
+            const SizedBox(width: 30),
+            Expanded(
+              child: HHUserTypeCard(
+                userType: HHUserType.customer,
+                label: APPStrings.customer,
+                assetIcon: APPImages.icCustomer,
+                isSelected: _selectedUserType == HHUserType.customer,
+                onTap: () {
+                  print('\n🧑 Customer selected');
+                  setState(() {
+                    _selectedUserType = HHUserType.customer;
+                  });
+                },
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -377,11 +441,18 @@ class _HHLocationScreenState extends State<HHLocationScreen> {
 
     if (_selectedLocationId == null) {
       print('   ⚠️  No location selected');
-      _showSnackBar('Please select a location');
+      _showSnackBar(APPStrings.selectLocation);
+      return;
+    }
+
+    if (_selectedUserType == null) {
+      print('   ⚠️  No user type selected');
+      _showSnackBar(APPStrings.selectUserTypeError);
       return;
     }
 
     print('   ✅ Selected Location ID: $_selectedLocationId');
+    print('   ✅ Selected User Type: ${_selectedUserType!.value}');
 
     // Show loading
     showDialog(
@@ -396,28 +467,40 @@ class _HHLocationScreenState extends State<HHLocationScreen> {
 
     // Select location in app manager
     print('   🔄 Selecting location in app manager...');
-    final success = await _appManager.selectLocation(_selectedLocationId!);
+    final locationSuccess = await _appManager.selectLocation(_selectedLocationId!);
+
+    if (!locationSuccess) {
+      if (mounted) {
+        Navigator.pop(context);
+      }
+      print('   ❌ Failed to select location in app manager');
+      print('   Error: ${_appManager.error}');
+      _showSnackBar(_appManager.error ?? 'Failed to select location');
+      return;
+    }
+
+    // Select user type in app manager
+    print('   🔄 Selecting user type in app manager...');
+    await _appManager.selectUserType(_selectedUserType!.value);
+    print('   ✅ User type selected successfully');
 
     // Hide loading
     if (mounted) {
       Navigator.pop(context);
     }
 
-    if (success) {
-      print('   ✅ Location selected successfully in app manager');
+    // Get selected location details
+    final selectedLocation = (_selectedLocationIndex != null && _selectedLocationIndex! < _displayLocations.length)
+        ? _displayLocations[_selectedLocationIndex!]
+        : _displayLocations.first;
 
-      // Get selected location details
-      final selectedLocation = _displayLocations.firstWhere(
-            (location) => location.isSelected,
-        orElse: () => _displayLocations.first,
-      );
+    print('   🎉 Navigating based on user type');
+    print('   Location: ${selectedLocation.title}');
+    print('   Location ID: ${selectedLocation.id}');
 
-      print('   🎉 Navigating to Welcome Screen');
-      print('   Location: ${selectedLocation.title}');
-      print('   Location ID: ${selectedLocation.id}');
-
-      // Navigate to Welcome Screen with selected location data
-      if (mounted) {
+    if (mounted) {
+      if (_selectedUserType == HHUserType.customer) {
+        print('   ➡️  Routing to Welcome Screen (Customer flow)');
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -427,11 +510,13 @@ class _HHLocationScreenState extends State<HHLocationScreen> {
             ),
           ),
         );
+      } else {
+        print('   ➡️  Routing to Product List Screen (Staff flow)');
+        Navigator.pushReplacementNamed(
+          context,
+          AppRoutes.routesStaffMenu,
+        );
       }
-    } else {
-      print('   ❌ Failed to select location in app manager');
-      print('   Error: ${_appManager.error}');
-      _showSnackBar(_appManager.error ?? 'Failed to select location');
     }
   }
 

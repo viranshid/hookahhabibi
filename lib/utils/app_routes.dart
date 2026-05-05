@@ -12,4 +12,5 @@ class AppRoutes {
   static const String routesViewCart = '/viewcart';
   static const String routesCheckOut = '/checkout_screen';
   static const String routesNotification = 'notifications';
+  static const String routesStaffMenu = '/routesStaffMenu';
 }

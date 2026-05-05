@@ -249,6 +249,22 @@ class HHAppManager extends ChangeNotifier {
     }
   }
 
+  /// Select user type
+  Future<void> selectUserType(String userType) async {
+    print('\n👤 APP MANAGER: Selecting user type');
+    print('   User Type: $userType');
+
+    try {
+      await sessionManager.setUserType(userType);
+      print('   ✅ User type selected and saved');
+      notifyListeners();
+    } catch (e) {
+      print('   ❌ Error selecting user type: ${e.toString()}');
+      _error = 'Failed to select user type: ${e.toString()}';
+      notifyListeners();
+    }
+  }
+
   /// Clear error
   void clearError() {
     _error = null;
