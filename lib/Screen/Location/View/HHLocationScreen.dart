@@ -511,7 +511,7 @@ class _HHLocationScreenState extends State<HHLocationScreen> {
           ),
         );
       } else {
-        print('   ➡️  Routing to Product List Screen (Staff flow)');
+        print('   ➡️  Routing to StaffMenu List Screen (Staff flow)');
         Navigator.pushReplacementNamed(
           context,
           AppRoutes.routesStaffMenu,

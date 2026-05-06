@@ -4,11 +4,9 @@ import 'package:hookahhabibi/Screen/Cart/View/HHCheckoutScreen.dart';
 import 'package:hookahhabibi/Screen/Cart/View/HHViewCartScreen.dart';
 import 'package:hookahhabibi/Screen/Location/View/HHLocationScreen.dart';
 import 'package:hookahhabibi/Screen/Notifications/View/HHNotificationsScreen.dart';
-import 'package:hookahhabibi/Screen/Product/View/HHAllProductScreen.dart';
-import 'package:hookahhabibi/Screen/Product/View/HHProductDetailScreen.dart';
-import 'package:hookahhabibi/Screen/Product/View/HHStaffMenuScreen.dart';
 import 'package:hookahhabibi/Screen/SplashScreen.dart';
 import 'package:hookahhabibi/Screen/Login/HHLogin.dart';
+import 'package:hookahhabibi/Screen/StaffMenu/View/HHStaffMenuScreen.dart';
 import 'package:hookahhabibi/Screen/Welcom/View/HHWelcom.dart';
 import 'package:hookahhabibi/utils/app_routes.dart';
 import 'package:hookahhabibi/utils/CustomPageRoute.dart';
@@ -43,18 +41,6 @@ class RouteGenerator {
       case AppRoutes.routesStaffMenu:
         return FadePageRouteBuilder(
           builder: (_) => const HHStaffMenuScreen(),
-        );
-
-      case AppRoutes.routesProductDetail:
-        return FadePageRouteBuilder(
-          builder: (_) => HHProductDetailScreen(
-            productId: args is String ? args : null,
-          ),
-        );
-
-      case AppRoutes.routesAllProduct:
-        return FadePageRouteBuilder(
-          builder: (_) => const HHAllProductScreen(),
         );
 
       case AppRoutes.routesCart:

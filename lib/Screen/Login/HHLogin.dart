@@ -75,8 +75,12 @@ class _HHLoginState extends State<HHLogin>
     _slideController.forward();
 
     // // For testing, pre-fill credentials
-    _emailController.text = 'mt11@example.com';
+    _emailController.text = 'mt11@8therate.com';
     _passwordController.text = 'Test@123';
+
+    // For testing, pre-fill credentials
+    // _emailController.text = 'admin';
+    // _passwordController.text = 'IPi@2b6@60UI';
   }
 
   @override

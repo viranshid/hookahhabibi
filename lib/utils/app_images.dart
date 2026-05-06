@@ -55,6 +55,7 @@ class APPImages {
   static const icMenuIcon = '${imageBaseURL}menu_icon.png';
   static const icOrderIcon = '${imageBaseURL}order_icon.png';
   static const icHeaderLogo = '${imageBaseURL}logo_member.png';
+  static const logoMember = '${imageBaseURL}logo_member.png';
 
   //Temp Images
   static const temp1 = '${imageBaseURL}temp1.jpg';

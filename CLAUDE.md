@@ -182,14 +182,13 @@ All are `Singleton + ChangeNotifier`. Access via `.instance`.
 ## Navigation
 
 ### Route constants — `lib/utils/app_routes.dart`
-`routesSplash` · `routesLogin` · `routesWelcome` · `routesLocation` · `routesProductList` · `routesProductDetail` · `routesAllProduct` · `routesCart` · `routesViewCart` · `routesCheckOut` · `routesNotification`
+`routesSplash` · `routesLogin` · `routesWelcome` · `routesLocation` · `routesProductList` · `routesCart` · `routesViewCart` · `routesCheckOut` · `routesNotification` · `routesStaffMenu`
 
-### Phase 2 screen stubs
+### Active screens
 | Route | Screen | File |
 |---|---|---|
 | routesProductList | HHProductListScreen | Screen/Product/View/ |
-| routesProductDetail | HHProductDetailScreen | Screen/Product/View/ |
-| routesAllProduct | HHAllProductScreen | Screen/Product/View/ |
+| routesStaffMenu | HHStaffMenuScreen | Screen/Product/View/ |
 | routesCart | HHCartScreen | Screen/Cart/View/ |
 | routesViewCart | HHViewCartScreen | Screen/Cart/View/ |
 | routesCheckOut | HHCheckoutScreen | Screen/Cart/View/ |
@@ -386,6 +385,20 @@ RouteGenerator.navigateAndReplaceWithAnimation(context, AppRoutes.routesLogin, A
 - `paymentService` — HHPaymentService instance
 
 All services use **ValueNotifier** for reactive state updates. UI components use **ValueListenableBuilder** for efficient rebuilds.
+
+---
+
+## Phase 3: Staff Menu Screen
+
+### Main Screen — `lib/Screen/Product/View/`
+| Screen | Purpose |
+|---|---|
+| `HHStaffMenuScreen.dart` | Staff-facing menu display screen. Landscape layout with header (80h) and content area. |
+
+### Components — `lib/Screen/Product/View/Components/`
+| Component | Purpose | Dimensions |
+|---|---|---|
+| `HHStaffMenuHeader.dart` | Top header bar with dark green background. Reusable container for header content. | Width: full, Height: 80, Background: #004216 |
 
 ---
 

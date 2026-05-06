@@ -1,7 +1,7 @@
 /// API Constants for the application
 class ApiConstants {
   // Base URL
-  static const String baseUrl = 'https://myapp.hookahhabibi.co.id';
+  static const String baseUrl = 'https://vp83.8therate.com/app.hookahhabibi.co.id'; //'https://myapp.hookahhabibi.co.id';
 
   // API Endpoints
   static const String login = '/api/login';
