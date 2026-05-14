@@ -1,0 +1,98 @@
+name: hookahhabibi
+description: "API new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.8.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.1.0
+  path_provider: ^2.1.1
+  crypto: ^3.0.3
+  shared_preferences: ^2.2.2
+  google_fonts: ^6.1.0
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.20.2
+  cupertino_icons: ^1.0.8
+  flutter_native_splash: ^2.4.7
+  device_info_plus: ^12.3.0
+  uuid: ^4.5.2
+  provider: ^6.1.2
+  cached_network_image: ^3.4.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.4
+
+flutter:
+  uses-material-design: true
+  generate: true
+
+  assets:
+    - assets/images/
+    - assets/svg/
+    - assets/appIcon/
+
+  fonts:
+    # Jost Font Family
+    - family: Jost
+      fonts:
+        - asset: assets/fonts/Jost/Jost-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Jost/Jost-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Jost/Jost-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Jost/Jost-Bold.ttf
+          weight: 700
+
+    # Rubik Font Family
+    - family: Rubik
+      fonts:
+        - asset: assets/fonts/Rubik/Rubik-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Rubik/Rubik-SemiBold.ttf
+          weight: 600
+
+    # Oswald Font Family
+    - family: Oswald
+      fonts:
+        - asset: assets/fonts/Oswald/Oswald-Light.ttf
+          weight: 300
+        - asset: assets/fonts/Oswald/Oswald-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Oswald/Oswald-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Oswald/Oswald-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Oswald/Oswald-Bold.ttf
+          weight: 700
+
+    # Merriweather Font Family
+    - family: Merriweather
+      fonts:
+        - asset: assets/fonts/Merriweather/Merriweather-Italic.ttf
+          style: italic
+
+
+# Flutter Launcher Icons configuration (MUST be outside the flutter: block)
+flutter_launcher_icons:
+  android: true
+  ios: true
+  adaptive_icon_background: "#000000"
+  adaptive_icon_foreground: assets/appIcon/appIcon.png
+  image_path: assets/appIcon/appIcon.png
+
+flutter_native_splash:
+  color: "#000000"        # your background color (use your green gradient base color)
+  image: assets/appIcon/appIcon.png
+  android: true
+  ios: true
+  web: true

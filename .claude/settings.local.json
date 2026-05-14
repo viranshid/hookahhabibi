@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter pub *)",
+      "Bash(flutter analyze *)",
+      "Bash(nslookup myapp.hookahhabibi.co.id)",
+      "Bash(ping -c 3 myapp.hookahhabibi.co.id)",
+      "Bash(curl -I https://myapp.hookahhabibi.co.id)"
+    ]
+  }
+}
