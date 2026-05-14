@@ -41,6 +41,11 @@ class HHTableModel {
     );
   }
 
+  String get displayTableNumber {
+    final parsed = int.tryParse(tableNumber);
+    return 'T-${parsed ?? tableNumber}';
+  }
+
   HHTableModel copyWith({bool? isSelected}) {
     return HHTableModel(
       id: id,

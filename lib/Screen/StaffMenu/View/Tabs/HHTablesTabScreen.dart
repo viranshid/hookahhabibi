@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hookahhabibi/Enums/HHButtonType.dart';
+import 'package:hookahhabibi/Managers/HHSessionManager.dart';
 import 'package:hookahhabibi/Screen/StaffMenu/Model/HHTableModel.dart';
-import 'package:hookahhabibi/Screen/StaffMenu/Model/HHTableType.dart';
+import 'package:hookahhabibi/Screen/StaffMenu/Service/HHTableService.dart';
 import 'package:hookahhabibi/Screen/StaffMenu/View/Tabs/Components/HHTablesGridView.dart';
 import 'package:hookahhabibi/Widgets/HHButton.dart';
+import 'package:hookahhabibi/Widgets/HHErrorView.dart';
+import 'package:hookahhabibi/Widgets/HHLoadingView.dart';
 import 'package:hookahhabibi/utils/AppText.dart';
 import 'package:hookahhabibi/utils/AppTextStyle.dart';
 import 'package:hookahhabibi/utils/app_colors.dart';
@@ -70,11 +73,64 @@ class _HHTablesTabScreenState extends State<HHTablesTabScreen> {
   final TextEditingController _mobileController = TextEditingController();
   int _guestCount = 1;
 
+  final HHTableService _tableService = HHTableService();
+  List<HHTableAreaModel> _areas = const [];
+  bool _isLoading = true;
+  String? _errorMessage;
+
   @override
   void initState() {
     super.initState();
     _nameController.addListener(_onCustomerInputChanged);
     _mobileController.addListener(_onCustomerInputChanged);
+    _loadTables();
+  }
+
+  Future<void> _loadTables() async {
+    if (!mounted) return;
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    final session = HHSessionManager();
+    final token = session.bearerToken;
+    final locationIdRaw = session.selectedLocation?.id;
+    final locationId = int.tryParse(locationIdRaw ?? '');
+
+    if (token == null || token.isEmpty || locationId == null) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Session expired. Please log in and select a location again.';
+      });
+      return;
+    }
+
+    final response = await _tableService.getTables(
+      bearerToken: token,
+      locationId: locationId,
+    );
+
+    if (!mounted) return;
+
+    if (!response.success || response.data == null) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = response.message ?? 'Failed to load tables.';
+      });
+      return;
+    }
+
+    final areas = <HHTableAreaModel>[];
+    for (final location in response.data!) {
+      areas.addAll(location.areas);
+    }
+
+    setState(() {
+      _isLoading = false;
+      _areas = areas;
+    });
   }
 
   @override
@@ -183,66 +239,43 @@ class _HHTablesTabScreenState extends State<HHTablesTabScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _buildCustomerSidebar(),
-        Expanded(
-          child: HHTablesGridView(
-            areas: _mockAreas,
-            onTableTap: _onTableTap,
-          ),
-        ),
+        Expanded(child: _buildTablesContent()),
       ],
     );
   }
 
-  void _onTableTap(HHTableModel table) {
-    // Will be wired to manager once API is integrated.
+  Widget _buildTablesContent() {
+    if (_isLoading) {
+      return const HHLoadingView(message: 'Loading tables...');
+    }
+    if (_errorMessage != null) {
+      return HHErrorView(
+        message: _errorMessage!,
+        retryLabel: 'Retry',
+        onRetry: _loadTables,
+      );
+    }
+    return HHTablesGridView(
+      areas: _areas,
+      onTableTap: _onTableTap,
+    );
   }
 
-  List<HHTableAreaModel> get _mockAreas => const [
-        HHTableAreaModel(
-          areaId: 1,
-          areaName: 'Ground floor',
-          tables: [
-            HHTableModel(id: 1, tableNumber: 'T-1', capacity: 4, type: HHTableType.blank, locationId: 1, areaId: 1),
-            HHTableModel(id: 2, tableNumber: 'T-2', capacity: 4, type: HHTableType.blank, locationId: 1, areaId: 1),
-            HHTableModel(id: 3, tableNumber: 'T-3', capacity: 4, type: HHTableType.blank, locationId: 1, areaId: 1),
-            HHTableModel(id: 4, tableNumber: 'T-4', capacity: 6, type: HHTableType.blank, locationId: 1, areaId: 1, isSelected: true),
-            HHTableModel(id: 5, tableNumber: 'T-5', capacity: 4, type: HHTableType.kotRunning, minutes: 12, customerName: 'Bhavik', locationId: 1, areaId: 1),
-            HHTableModel(id: 6, tableNumber: 'T-6', capacity: 4, type: HHTableType.blank, locationId: 1, areaId: 1),
-            HHTableModel(id: 7, tableNumber: 'T-7', capacity: 4, type: HHTableType.kotRunning, minutes: 7, customerName: 'Nishant', locationId: 1, areaId: 1),
-            HHTableModel(id: 8, tableNumber: 'T-8', capacity: 6, type: HHTableType.blank, locationId: 1, areaId: 1),
-            HHTableModel(id: 9, tableNumber: 'T-9', capacity: 6, type: HHTableType.blank, locationId: 1, areaId: 1, isSelected: true),
-            HHTableModel(id: 10, tableNumber: 'T-10', capacity: 8, type: HHTableType.blank, locationId: 1, areaId: 1),
-            HHTableModel(id: 11, tableNumber: 'T-11', capacity: 5, type: HHTableType.blank, locationId: 1, areaId: 1),
-            HHTableModel(id: 12, tableNumber: 'T-12', capacity: 10, type: HHTableType.blank, locationId: 1, areaId: 1),
-          ],
-        ),
-        HHTableAreaModel(
-          areaId: 2,
-          areaName: 'Basement',
-          tables: [
-            HHTableModel(id: 13, tableNumber: 'T-13', capacity: 4, type: HHTableType.blank, locationId: 1, areaId: 2),
-            HHTableModel(id: 14, tableNumber: 'T-14', capacity: 4, type: HHTableType.blank, locationId: 1, areaId: 2),
-            HHTableModel(id: 15, tableNumber: 'T-15', capacity: 4, type: HHTableType.printed, minutes: 22, customerName: 'Vishal Kha…', locationId: 1, areaId: 2),
-            HHTableModel(id: 16, tableNumber: 'T-16', capacity: 6, type: HHTableType.blank, locationId: 1, areaId: 2),
-            HHTableModel(id: 17, tableNumber: 'T-17', capacity: 4, type: HHTableType.running, minutes: 18, customerName: 'Vishal Kha…', locationId: 1, areaId: 2),
-            HHTableModel(id: 18, tableNumber: 'T-18', capacity: 4, type: HHTableType.blank, locationId: 1, areaId: 2),
-          ],
-        ),
-        HHTableAreaModel(
-          areaId: 3,
-          areaName: 'Balcony',
-          tables: [
-            HHTableModel(id: 19, tableNumber: 'T-19', capacity: 4, type: HHTableType.blank, locationId: 1, areaId: 3),
-            HHTableModel(id: 20, tableNumber: 'T-20', capacity: 4, type: HHTableType.blank, locationId: 1, areaId: 3),
-            HHTableModel(id: 21, tableNumber: 'T-21', capacity: 4, type: HHTableType.blank, locationId: 1, areaId: 3),
-            HHTableModel(id: 22, tableNumber: 'T-22', capacity: 4, type: HHTableType.blank, locationId: 1, areaId: 3),
-            HHTableModel(id: 23, tableNumber: 'T-23', capacity: 4, type: HHTableType.blank, locationId: 1, areaId: 3),
-            HHTableModel(id: 24, tableNumber: 'T-24', capacity: 4, type: HHTableType.blank, locationId: 1, areaId: 3),
-            HHTableModel(id: 25, tableNumber: 'T-25', capacity: 4, type: HHTableType.blank, locationId: 1, areaId: 3),
-            HHTableModel(id: 26, tableNumber: 'T-26', capacity: 4, type: HHTableType.blank, locationId: 1, areaId: 3),
-          ],
-        ),
-      ];
+  void _onTableTap(HHTableModel table) {
+    setState(() {
+      _areas = _areas
+          .map((area) => HHTableAreaModel(
+                areaId: area.areaId,
+                areaName: area.areaName,
+                tables: area.tables
+                    .map((t) => t.id == table.id
+                        ? t.copyWith(isSelected: !t.isSelected)
+                        : t)
+                    .toList(),
+              ))
+          .toList();
+    });
+  }
 
   Widget _buildCustomerSidebar() {
     return SizedBox(
@@ -521,7 +554,7 @@ class _HHTablesTabScreenState extends State<HHTablesTabScreen> {
           rows: [
             _buildDetailRow(label: 'Guests', value: '$_guestCount'),
             const SizedBox(height: _bottomBarRowGap),
-            _buildDetailRow(label: 'Table No.', value: 'T-4, T-9'),
+            _buildDetailRow(label: 'Table No.', value: _selectedTablesLabel()),
           ],
         ),
       ],
@@ -578,6 +611,16 @@ class _HHTablesTabScreenState extends State<HHTablesTabScreen> {
 
   void _onContinuePressed() {
     Navigator.of(context).pushNamed(AppRoutes.routesProductList);
+  }
+
+  String _selectedTablesLabel() {
+    final selected = <String>[];
+    for (final area in _areas) {
+      for (final t in area.tables) {
+        if (t.isSelected) selected.add(t.displayTableNumber);
+      }
+    }
+    return selected.isEmpty ? '—' : selected.join(', ');
   }
 
   String _displayName() {

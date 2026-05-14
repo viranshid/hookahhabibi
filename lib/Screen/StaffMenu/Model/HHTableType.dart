@@ -33,7 +33,7 @@ enum HHTableType {
   Color get borderColor {
     switch (this) {
       case HHTableType.blank:
-        return AppColors.colorTableBlankBg;
+        return AppColors.colorTableBlankBorder;
       case HHTableType.kotRunning:
         return AppColors.colorTableKOT;
       case HHTableType.running:

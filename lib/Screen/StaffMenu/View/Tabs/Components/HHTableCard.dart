@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:hookahhabibi/Screen/StaffMenu/Model/HHTableModel.dart';
-import 'package:hookahhabibi/Screen/StaffMenu/Model/HHTableType.dart';
 import 'package:hookahhabibi/utils/AppText.dart';
 import 'package:hookahhabibi/utils/AppTextStyle.dart';
 import 'package:hookahhabibi/utils/app_images.dart';
@@ -17,7 +16,7 @@ class HHTableCard extends StatelessWidget {
   static const double _borderWidth = 2;
   static const double _dashLength = 4;
   static const double _gapLength = 4;
-  static const double _selectionIconSize = 22;
+  static const double _selectionIconSize = 21;
 
   @override
   Widget build(BuildContext context) {
@@ -128,7 +127,7 @@ class HHTableCard extends StatelessWidget {
 
   Widget _buildBookedTableNumber() {
     return AppText(
-      text: table.tableNumber,
+      text: table.displayTableNumber,
       appTextStyle: AppTextStyle.oswaldMedium18Colored,
       customColor: table.type.numberColor,
       textAlign: TextAlign.center,
@@ -137,7 +136,7 @@ class HHTableCard extends StatelessWidget {
 
   Widget _buildBlankTableNumber() {
     return AppText(
-      text: table.tableNumber,
+      text: table.displayTableNumber,
       appTextStyle: AppTextStyle.oswaldMedium22White,
       textAlign: TextAlign.center,
     );
@@ -165,8 +164,8 @@ class HHTableCard extends StatelessWidget {
 
   Widget _buildSelectionMark() {
     return Positioned(
-      top: -_selectionIconSize / 3,
-      right: -_selectionIconSize / 3,
+      top: 3.5,
+      right: 3.5,
       child: Image.asset(
         APPImages.icRightTableCard,
         width: _selectionIconSize,

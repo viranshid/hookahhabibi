@@ -10,6 +10,7 @@ class ApiConstants {
   static const String getDishCats = '/api/get-dish-cats';
   static const String getDishes = '/api/get-dishes';
   static const String getOfferImgs = '/api/get-offer-imgs';
+  static const String getTables = '/api/get-tables';
 
   // Request Headers
   static const String contentTypeMultipart = 'multipart/form-data';
