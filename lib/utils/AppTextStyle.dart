@@ -13,12 +13,15 @@ enum AppTextStyle {
   jostBold26Heading,
   jostBold36Heading,
   jostBold24Light,
+  jostMedium19White,
 
   // Rubik Font Styles
   rubikRegular14Light,
   rubikSemiBold18OffWhite,
   rubikRegular14Muted,
   rubikRegular14Red,
+  rubikRegular16Divider,
+  rubikRegular16Placeholder,
 
   // Oswald Font Styles
   oswaldBold54White,
@@ -28,10 +31,18 @@ enum AppTextStyle {
   oswaldSemiBold26Light,
   oswaldMedium22OffWhite,
   oswaldRegular16OffWhite,
+  oswaldRegular16White,
+  oswaldRegular18White,
+  oswaldRegular18Placeholder,
   oswaldSemiBold20UppercaseLight,
   oswaldLight16Gray,
+  oswaldLight20Placeholder,
   oswaldRegular20UppercaseLight,
   oswaldRegular14UppercaseLight,
+  oswaldRegular14Divider,
+  oswaldMedium18Colored,
+  oswaldMedium22White,
+  oswaldRegular16Placeholder,
 
   // Merriweather Font Styles
   merriweatherItalic22White,
@@ -138,6 +149,16 @@ class AppTextStyleManager {
           color: AppColors.colorECC16E,
         );
 
+      case AppTextStyle.jostMedium19White:
+        return TextStyle(
+          fontFamily: _jostFont,
+          fontWeight: FontWeight.w500,
+          fontSize: 19,
+          height: 20 / 19,
+          letterSpacing: 0,
+          color: AppColors.colorFFFFFF,
+        );
+
     // Rubik Font Styles
       case AppTextStyle.rubikRegular14Light:
         return TextStyle(
@@ -177,6 +198,26 @@ class AppTextStyleManager {
           height: 18 / 14,
           letterSpacing: 0,
           color: AppColors.colorFF928A,
+        );
+
+      case AppTextStyle.rubikRegular16Divider:
+        return TextStyle(
+          fontFamily: _rubikFont,
+          fontWeight: FontWeight.w400,
+          fontSize: 16,
+          height: 20 / 16,
+          letterSpacing: 0,
+          color: AppColors.colorD9D9D9,
+        );
+
+      case AppTextStyle.rubikRegular16Placeholder:
+        return TextStyle(
+          fontFamily: _rubikFont,
+          fontWeight: FontWeight.w400,
+          fontSize: 16,
+          height: 20 / 16,
+          letterSpacing: 0,
+          color: AppColors.color484848,
         );
 
     // Oswald Font Styles
@@ -230,6 +271,46 @@ class AppTextStyleManager {
           color: AppColors.colorECC16E,
         );
 
+      case AppTextStyle.oswaldRegular14Divider:
+        return TextStyle(
+          fontFamily: _oswaldFont,
+          fontWeight: FontWeight.w400,
+          fontSize: 14,
+          height: 1.0,
+          letterSpacing: 0,
+          color: AppColors.colorD9D9D9,
+        );
+
+      case AppTextStyle.oswaldMedium18Colored:
+        return TextStyle(
+          fontFamily: _oswaldFont,
+          fontWeight: FontWeight.w500,
+          fontSize: 18,
+          height: 1.0,
+          letterSpacing: 0,
+          color: AppColors.colorFFFFFF,
+        );
+
+      case AppTextStyle.oswaldMedium22White:
+        return TextStyle(
+          fontFamily: _oswaldFont,
+          fontWeight: FontWeight.w500,
+          fontSize: 22,
+          height: 1.0,
+          letterSpacing: 0,
+          color: AppColors.colorFFFFFF,
+        );
+
+      case AppTextStyle.oswaldRegular16Placeholder:
+        return TextStyle(
+          fontFamily: _oswaldFont,
+          fontWeight: FontWeight.w400,
+          fontSize: 16,
+          height: 1.0,
+          letterSpacing: 0,
+          color: AppColors.colorB3B3B3,
+        );
+
       case AppTextStyle.oswaldSemiBold26Light:
         return TextStyle(
           fontFamily: _oswaldFont,
@@ -260,6 +341,36 @@ class AppTextStyleManager {
           color: AppColors.colorF4F5F7,
         );
 
+      case AppTextStyle.oswaldRegular16White:
+        return TextStyle(
+          fontFamily: _oswaldFont,
+          fontWeight: FontWeight.w400,
+          fontSize: 16,
+          height: 1.0, // 100%
+          letterSpacing: 0,
+          color: AppColors.colorFFFFFF,
+        );
+
+      case AppTextStyle.oswaldRegular18White:
+        return TextStyle(
+          fontFamily: _oswaldFont,
+          fontWeight: FontWeight.w400,
+          fontSize: 18,
+          height: 1.0, // 100%
+          letterSpacing: 0,
+          color: AppColors.colorFFFFFF,
+        );
+
+      case AppTextStyle.oswaldRegular18Placeholder:
+        return TextStyle(
+          fontFamily: _oswaldFont,
+          fontWeight: FontWeight.w400,
+          fontSize: 18,
+          height: 20 / 18,
+          letterSpacing: 0,
+          color: AppColors.colorB3B3B3,
+        );
+
       case AppTextStyle.oswaldSemiBold20UppercaseLight:
         return TextStyle(
           fontFamily: _oswaldFont,
@@ -278,6 +389,16 @@ class AppTextStyleManager {
           height: 22 / 16,
           letterSpacing: 0,
           color: AppColors.colorD9D9D9,
+        );
+
+      case AppTextStyle.oswaldLight20Placeholder:
+        return TextStyle(
+          fontFamily: _oswaldFont,
+          fontWeight: FontWeight.w300,
+          fontSize: 20,
+          height: 1.0,
+          letterSpacing: 0,
+          color: AppColors.colorB3B3B3,
         );
 
       case AppTextStyle.oswaldRegular20UppercaseLight:

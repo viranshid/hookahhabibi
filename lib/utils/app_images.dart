@@ -54,6 +54,17 @@ class APPImages {
   static const icTableIcon = '${imageBaseURL}table_icon.png';
   static const icMenuIcon = '${imageBaseURL}menu_icon.png';
   static const icOrderIcon = '${imageBaseURL}order_icon.png';
+
+  //Customer Details - Stepper Icons
+  static const icStepperPlus = '${imageBaseURL}ic_stepper_plus.png';
+  static const icStepperMinus = '${imageBaseURL}ic_stepper_minus.png';
+
+  //Table Cards
+  static const icKotRunningTableCard =
+      '${imageBaseURL}ic_kot_running_table_card.png';
+  static const icRunningTableCard = '${imageBaseURL}ic_running_table_card.png';
+  static const icPrintedTableCard = '${imageBaseURL}ic_printed_table_card.png';
+  static const icRightTableCard = '${imageBaseURL}ic_right_table_card.png';
   static const icHeaderLogo = '${imageBaseURL}logo_member.png';
   static const logoMember = '${imageBaseURL}logo_member.png';
 

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:hookahhabibi/Managers/HHLocationManager.dart';
 import 'package:hookahhabibi/Screen/StaffMenu/Model/StaffMenuTab.dart';
 import 'package:hookahhabibi/Screen/StaffMenu/View/Components/HHStaffMenuHeader.dart';
+import 'package:hookahhabibi/Screen/StaffMenu/View/Tabs/HHMenuTabScreen.dart';
+import 'package:hookahhabibi/Screen/StaffMenu/View/Tabs/HHOrdersTabScreen.dart';
+import 'package:hookahhabibi/Screen/StaffMenu/View/Tabs/HHTablesTabScreen.dart';
 import 'package:hookahhabibi/utils/app_colors.dart';
 import 'package:provider/provider.dart';
 
@@ -13,6 +16,7 @@ class HHStaffMenuScreen extends StatefulWidget {
 }
 
 class _HHStaffMenuScreenState extends State<HHStaffMenuScreen> {
+  static const double _headerHeight = 80;
   StaffMenuTab _selectedTab = StaffMenuTab.tables;
 
   void _onTabSelected(StaffMenuTab tab) {
@@ -29,15 +33,11 @@ class _HHStaffMenuScreenState extends State<HHStaffMenuScreen> {
         '';
 
     return Scaffold(
-      backgroundColor: AppColors.colorBlack,
-      body: Column(
+      backgroundColor: AppColors.color01110A,
+      body: Stack(
         children: [
-          HHStaffMenuHeader(
-            selectedTab: _selectedTab,
-            onTabSelected: _onTabSelected,
-            locationName: locationName,
-          ),
-          Expanded(
+          Positioned.fill(
+            top: _headerHeight,
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 300),
               switchInCurve: Curves.easeOut,
@@ -48,6 +48,17 @@ class _HHStaffMenuScreenState extends State<HHStaffMenuScreen> {
               ),
             ),
           ),
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 0,
+            child: HHStaffMenuHeader(
+              selectedTab: _selectedTab,
+              onTabSelected: _onTabSelected,
+              locationName: locationName,
+              height: _headerHeight,
+            ),
+          ),
         ],
       ),
     );
@@ -56,26 +67,11 @@ class _HHStaffMenuScreenState extends State<HHStaffMenuScreen> {
   Widget _buildTabContent(StaffMenuTab tab) {
     switch (tab) {
       case StaffMenuTab.tables:
-        return const _TabPlaceholder(title: 'HH_Order Table View');
+        return const HHTablesTabScreen();
       case StaffMenuTab.menu:
-        return const _TabPlaceholder(title: 'Menu');
+        return const HHMenuTabScreen();
       case StaffMenuTab.orders:
-        return const _TabPlaceholder(title: 'Orders');
+        return const HHOrdersTabScreen();
     }
-  }
-}
-
-class _TabPlaceholder extends StatelessWidget {
-  final String title;
-  const _TabPlaceholder({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Text(
-        title,
-        style: const TextStyle(color: Colors.white, fontSize: 18),
-      ),
-    );
   }
 }

@@ -31,6 +31,20 @@ class AppColors {
   static const color33FFFF = Color(0x33FFFFFF);
   static const color01110A = Color(0xFF01110A);
 
+  // Table status border colors
+  static const colorTableBlankBorder = Color(0xFF2E7D44);
+  static const colorTableRunningBlue = Color(0xFF00A6E0);
+  static const colorTablePrintedGreen = Color(0xFF8AB87A);
+
+  // Table card status colors (per backend spec)
+  static const colorTableBlankBg = Color(0xFF00541A);
+  static const colorTableKOT = Color(0xFFD09843);
+  static const colorTableKOTFill = Color(0x4DD09843);
+  static const colorTableRunning = Color(0xFF00C0E8);
+  static const colorTableRunningFill = Color(0x4D00C0E8);
+  static const colorTablePrinted = Color(0xFF84994F);
+  static const colorTablePrintedFill = Color(0x4D84994F);
+
   static const Color transparentColor = Colors.transparent;
   // Your existing gradients
   static const linearGradientFB9400FFAB38 = LinearGradient(
