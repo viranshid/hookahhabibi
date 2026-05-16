@@ -13,6 +13,7 @@ class HHMenuListCard extends StatefulWidget {
   final Function(bool)? onMenuToggle;
   final HHDishCategoryModel? selectedMenuItem;
   final Function(HHDishCategoryModel)? onMenuItemSelected;
+  final Widget? header;
 
   const HHMenuListCard({
     Key? key,
@@ -20,6 +21,7 @@ class HHMenuListCard extends StatefulWidget {
     this.onMenuToggle,
     this.selectedMenuItem,
     this.onMenuItemSelected,
+    this.header,
   }) : super(key: key);
 
   @override
@@ -37,16 +39,21 @@ class _HHMenuListCardState extends State<HHMenuListCard> {
   @override
   void initState() {
     super.initState();
-    _loadCategories();
+    _isLoading = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _loadCategories();
+    });
   }
 
   Future<void> _loadCategories() async {
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
     });
 
     await _appManager.menuManager.loadCategories();
 
+    if (!mounted) return;
     setState(() {
       _categories = _appManager.menuManager.categories;
       // Initialize with the passed selected item or default to first item
@@ -89,7 +96,7 @@ class _HHMenuListCardState extends State<HHMenuListCard> {
         mainAxisSize: MainAxisSize.max,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildLogoSection(),
+          widget.header ?? _buildLogoSection(),
           if (widget.isMenuOpen) _buildSeparatorLine(),
           Expanded(child: _buildMenuScrollView()),
         ],
