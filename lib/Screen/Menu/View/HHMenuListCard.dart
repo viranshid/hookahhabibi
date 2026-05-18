@@ -14,6 +14,7 @@ class HHMenuListCard extends StatefulWidget {
   final HHDishCategoryModel? selectedMenuItem;
   final Function(HHDishCategoryModel)? onMenuItemSelected;
   final Widget? header;
+  final double collapsedWidth;
 
   const HHMenuListCard({
     Key? key,
@@ -22,6 +23,7 @@ class HHMenuListCard extends StatefulWidget {
     this.selectedMenuItem,
     this.onMenuItemSelected,
     this.header,
+    this.collapsedWidth = Dimens.margin130,
   }) : super(key: key);
 
   @override
@@ -54,6 +56,8 @@ class _HHMenuListCardState extends State<HHMenuListCard> {
     await _appManager.menuManager.loadCategories();
 
     if (!mounted) return;
+    final bool shouldNotifyParent =
+        widget.selectedMenuItem == null && _appManager.menuManager.categories.isNotEmpty;
     setState(() {
       _categories = _appManager.menuManager.categories;
       // Initialize with the passed selected item or default to first item
@@ -62,6 +66,10 @@ class _HHMenuListCardState extends State<HHMenuListCard> {
       }
       _isLoading = false;
     });
+
+    if (shouldNotifyParent && _internalSelectedItem != null) {
+      widget.onMenuItemSelected?.call(_internalSelectedItem!);
+    }
   }
 
   @override
@@ -83,7 +91,7 @@ class _HHMenuListCardState extends State<HHMenuListCard> {
   Widget build(BuildContext context) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
-      width: widget.isMenuOpen ? Dimens.margin300 : Dimens.margin130,
+      width: widget.isMenuOpen ? Dimens.margin300 : widget.collapsedWidth,
       height: double.infinity,
       decoration: const BoxDecoration(
         color: Colors.transparent,

@@ -3,6 +3,7 @@ class HHDishModel {
   final String name;
   final String description;
   final String price;
+  final String rawPrice;
   final String imageUrl;
   final String isSpicy;
   final String isVegetarian;
@@ -10,17 +11,23 @@ class HHDishModel {
   final bool isRecomended;
   final String category;
 
+  /// Breadcrumb path from the get-dishes API (`full_category`),
+  /// e.g. `"Ramadan Package > All Ramadan Packages"`.
+  final String fullCategory;
+
   HHDishModel({
     required this.id,
     required this.name,
     required this.description,
     required this.price,
+    this.rawPrice = '',
     required this.imageUrl,
     this.isSpicy = '',
     this.isVegetarian = '',
     this.isAvailable = true,
     this.isRecomended = false,
     required this.category,
+    this.fullCategory = '',
   });
 
   // Factory constructor for JSON parsing

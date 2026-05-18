@@ -18,6 +18,7 @@ class AppColors {
   static const colorBB7A24 = Color(0xFFBB7A24); // Primary dark
   static const color30271C = Color(0xFF30271C); // Heading color
   static const colorECC16E = Color(0xFFECC16E); // Primary light
+  static const colorECC16E1A = Color(0x1AECC16E); // Primary light 10% opacity
   static const colorEFEFEF = Color(0xFFEFEFEF); // Light gray
   static const colorF4F5F7 = Color(0xFFF4F5F7); // Off white
   static const color6C757D = Color(0xFF6C757D); // Text muted
@@ -30,6 +31,16 @@ class AppColors {
   static const color004216 = Color(0xFF004216);
   static const color33FFFF = Color(0x33FFFFFF);
   static const color01110A = Color(0xFF01110A);
+  static const color266528 = Color(0xFF266528);
+  static const colorKotActionLight = Color(0xFF4D7A38);
+  static const colorKotActionDark = Color(0xFF1F5C1E);
+  static const color84994F99 = Color(0x9984994F); // Olive @ 60% — inactive KOT tab
+  static const color19552D = Color(0xFF19552D);   // Selected KOT tab
+  static const colorC4C4C4 = Color(0xFFC4C4C4);   // KOT list header label
+  static const color0042254D = Color(0x4D004225);
+  static const color00422566 = Color(0x66004225);
+  static const color004225 = Color(0xFF004225);
+  static const color171717C9 = Color(0xC9171717);
 
   // Table status border colors
   static const colorTableBlankBorder = Color(0xFF2E7D44);

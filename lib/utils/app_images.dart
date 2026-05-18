@@ -59,6 +59,17 @@ class APPImages {
   static const icStepperPlus = '${imageBaseURL}ic_stepper_plus.png';
   static const icStepperMinus = '${imageBaseURL}ic_stepper_minus.png';
 
+  //KOT Meal Item Card
+  static const icKotMealRemoveBtn = '${imageBaseURL}ic_kot_meal_remove_btn.png';
+  static const icSingleMealNotes = '${imageBaseURL}ic_single_meal_notes.png';
+  static const icNoteCloseBtn = '${imageBaseURL}ic_note_close_btn.png';
+
+  //Menu Tab - KOT Panel Topbar
+  static const icMenuTabPerson = '${imageBaseURL}ic_manu_tab_person.png';
+  static const icMenuTabTable = '${imageBaseURL}ic_menu_tab_table.png';
+  static const icMenuTabDocument = '${imageBaseURL}ic_menu_tab_document.png';
+  static const icMenuItemCardRight = '${imageBaseURL}ic_menu_item_card_right.png';
+
   //Table Cards
   static const icKotRunningTableCard =
       '${imageBaseURL}ic_kot_running_table_card.png';
