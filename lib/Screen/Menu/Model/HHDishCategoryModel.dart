@@ -11,6 +11,11 @@ class HHDishCategoryModel {
   final String status;
   final String? createdAt;
   final String? updatedAt;
+
+  /// Breadcrumb string returned by the get-dishes API on the
+  /// `parent_dish_cats` node, e.g. `"Ramadan Package > All Ramadan Packages"`.
+  /// Empty for categories returned by get-dish-cats.
+  final String fullCategory;
   final List<HHDishCategoryModel> subCategories;
   final List<DishModel> dishes;
 
@@ -24,26 +29,41 @@ class HHDishCategoryModel {
     required this.status,
     this.createdAt,
     this.updatedAt,
+    this.fullCategory = '',
     this.subCategories = const [],
     this.dishes = const [],
   });
 
-  factory HHDishCategoryModel.fromJson(Map<String, dynamic> json) {
-    // Parse sub-categories if available
+  factory HHDishCategoryModel.fromJson(
+    Map<String, dynamic> json, {
+    String inheritedFullCategory = '',
+  }) {
+    // The parent_dish_cats node provides full_category; sub-cats inherit it.
+    final fullCategory = json['full_category']?.toString().trim().isNotEmpty == true
+        ? json['full_category'].toString()
+        : inheritedFullCategory;
+
+    // Parse sub-categories — propagate fullCategory downward.
     List<HHDishCategoryModel> subCats = [];
     if (json['dish_cats'] != null && json['dish_cats'] is Map) {
       final dishCatsMap = json['dish_cats'] as Map<String, dynamic>;
       subCats = dishCatsMap.values
-          .map((cat) => HHDishCategoryModel.fromJson(cat as Map<String, dynamic>))
+          .map((cat) => HHDishCategoryModel.fromJson(
+                cat as Map<String, dynamic>,
+                inheritedFullCategory: fullCategory,
+              ))
           .toList();
     }
 
-    // Parse dishes if available
+    // Parse dishes — inject fullCategory so each dish carries the breadcrumb.
     List<DishModel> dishList = [];
     if (json['dishes'] != null && json['dishes'] is Map) {
       final dishesMap = json['dishes'] as Map<String, dynamic>;
       dishList = dishesMap.values
-          .map((dish) => DishModel.fromJson(dish as Map<String, dynamic>))
+          .map((dish) => DishModel.fromJson(
+                dish as Map<String, dynamic>,
+                inheritedFullCategory: fullCategory,
+              ))
           .toList();
     }
 
@@ -57,6 +77,7 @@ class HHDishCategoryModel {
       status: json['status']?.toString() ?? '',
       createdAt: json['created_at']?.toString(),
       updatedAt: json['updated_at']?.toString(),
+      fullCategory: fullCategory,
       subCategories: subCats,
       dishes: dishList,
     );
@@ -106,6 +127,10 @@ class DishModel {
   final String? createdAt;
   final String? updatedAt;
 
+  /// Inherited from the parent category node's `full_category`
+  /// (e.g. `"Ramadan Package > All Ramadan Packages"`).
+  final String fullCategory;
+
   DishModel({
     required this.id,
     required this.title,
@@ -123,9 +148,13 @@ class DishModel {
     required this.isRecommended,
     this.createdAt,
     this.updatedAt,
+    this.fullCategory = '',
   });
 
-  factory DishModel.fromJson(Map<String, dynamic> json) {
+  factory DishModel.fromJson(
+    Map<String, dynamic> json, {
+    String inheritedFullCategory = '',
+  }) {
     return DishModel(
       id: json['id']?.toString() ?? '',
       title: json['title']?.toString() ?? '',
@@ -143,6 +172,7 @@ class DishModel {
       isRecommended: json['recommended']?.toString() ?? 'n',
       createdAt: json['created_at']?.toString(),
       updatedAt: json['updated_at']?.toString(),
+      fullCategory: inheritedFullCategory,
     );
   }
 

@@ -13,6 +13,8 @@ class HHMenuListCard extends StatefulWidget {
   final Function(bool)? onMenuToggle;
   final HHDishCategoryModel? selectedMenuItem;
   final Function(HHDishCategoryModel)? onMenuItemSelected;
+  final Widget? header;
+  final double collapsedWidth;
 
   const HHMenuListCard({
     Key? key,
@@ -20,6 +22,8 @@ class HHMenuListCard extends StatefulWidget {
     this.onMenuToggle,
     this.selectedMenuItem,
     this.onMenuItemSelected,
+    this.header,
+    this.collapsedWidth = Dimens.margin130,
   }) : super(key: key);
 
   @override
@@ -37,16 +41,23 @@ class _HHMenuListCardState extends State<HHMenuListCard> {
   @override
   void initState() {
     super.initState();
-    _loadCategories();
+    _isLoading = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _loadCategories();
+    });
   }
 
   Future<void> _loadCategories() async {
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
     });
 
     await _appManager.menuManager.loadCategories();
 
+    if (!mounted) return;
+    final bool shouldNotifyParent =
+        widget.selectedMenuItem == null && _appManager.menuManager.categories.isNotEmpty;
     setState(() {
       _categories = _appManager.menuManager.categories;
       // Initialize with the passed selected item or default to first item
@@ -55,6 +66,10 @@ class _HHMenuListCardState extends State<HHMenuListCard> {
       }
       _isLoading = false;
     });
+
+    if (shouldNotifyParent && _internalSelectedItem != null) {
+      widget.onMenuItemSelected?.call(_internalSelectedItem!);
+    }
   }
 
   @override
@@ -76,7 +91,7 @@ class _HHMenuListCardState extends State<HHMenuListCard> {
   Widget build(BuildContext context) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
-      width: widget.isMenuOpen ? Dimens.margin300 : Dimens.margin130,
+      width: widget.isMenuOpen ? Dimens.margin300 : widget.collapsedWidth,
       height: double.infinity,
       decoration: const BoxDecoration(
         color: Colors.transparent,
@@ -89,7 +104,7 @@ class _HHMenuListCardState extends State<HHMenuListCard> {
         mainAxisSize: MainAxisSize.max,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildLogoSection(),
+          widget.header ?? _buildLogoSection(),
           if (widget.isMenuOpen) _buildSeparatorLine(),
           Expanded(child: _buildMenuScrollView()),
         ],
