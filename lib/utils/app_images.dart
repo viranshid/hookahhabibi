@@ -70,6 +70,15 @@ class APPImages {
   static const icMenuTabDocument = '${imageBaseURL}ic_menu_tab_document.png';
   static const icMenuItemCardRight = '${imageBaseURL}ic_menu_item_card_right.png';
 
+  //Order KOT Card
+  static const icUserCircle = '${imageBaseURL}ic_user-circle.png';
+  static const icThreeDotsVertical = '${imageBaseURL}ic_three-dots-vertical.png';
+  static const icDocumentAdd = '${imageBaseURL}ic_document-add.png';
+  static const icDocumentEdit = '${imageBaseURL}ic_document-edit.png';
+  static const icNotes = '${imageBaseURL}ic_notes.png';
+  static const icSplit = '${imageBaseURL}ic_split.png';
+  static const icEye = '${imageBaseURL}ic_eye.png';
+
   //Table Cards
   static const icKotRunningTableCard =
       '${imageBaseURL}ic_kot_running_table_card.png';

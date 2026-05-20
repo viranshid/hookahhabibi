@@ -3,6 +3,7 @@ import 'package:hookahhabibi/Screen/StaffMenu/Model/HHOrderModel.dart';
 import 'package:hookahhabibi/utils/AppText.dart';
 import 'package:hookahhabibi/utils/AppTextStyle.dart';
 import 'package:hookahhabibi/utils/app_colors.dart';
+import 'package:hookahhabibi/utils/app_images.dart';
 
 class HHOrderKOTCard extends StatelessWidget {
   static const double cardWidth = 298;
@@ -98,8 +99,8 @@ class HHOrderKOTCard extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 10),
         child: Row(
           children: [
-            const Icon(Icons.account_circle_outlined,
-                size: 18, color: AppColors.colorECC16E),
+            Image.asset(APPImages.icUserCircle,
+                width: 22, height: 22, color: AppColors.colorECC16E),
             const SizedBox(width: 8),
             Expanded(
               child: AppText(
@@ -142,8 +143,8 @@ class HHOrderKOTCard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.remove_red_eye_outlined,
-                size: 18, color: AppColors.colorECC16E),
+            Image.asset(APPImages.icEye,
+                width: 18, height: 13, color: AppColors.colorECC16E),
             const SizedBox(height: 2),
             AppText(
               text: '${order.viewCount}',
@@ -170,8 +171,8 @@ class HHOrderKOTCard extends StatelessWidget {
               color: Color(0x29000000),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.more_vert,
-                size: 18, color: AppColors.colorECC16E),
+            child: Image.asset(APPImages.icThreeDotsVertical,
+                width: 4, height: 16, color: AppColors.colorECC16E),
           ),
         ),
       ),
@@ -336,10 +337,10 @@ class HHOrderKOTCard extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            _iconButton(Icons.note_add_outlined, disabled ? null : onAddItem),
-            _iconButton(Icons.edit_note, disabled ? null : onEditNote),
-            _iconButton(Icons.receipt_long_outlined, disabled ? null : onViewBill),
-            _iconButton(Icons.swap_horiz, disabled ? null : onTransfer),
+            _iconButton(APPImages.icDocumentAdd, disabled ? null : onAddItem),
+            _iconButton(APPImages.icDocumentEdit, disabled ? null : onEditNote),
+            _iconButton(APPImages.icNotes, disabled ? null : onViewBill),
+            _iconButton(APPImages.icSplit, disabled ? null : onTransfer),
             _settleButton(disabled ? null : onSettle),
           ],
         ),
@@ -347,18 +348,20 @@ class HHOrderKOTCard extends StatelessWidget {
     );
   }
 
-  Widget _iconButton(IconData icon, VoidCallback? onTap) {
+  Widget _iconButton(String assetPath, VoidCallback? onTap) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: Container(
         width: 36,
         height: 36,
+        alignment: Alignment.center,
         decoration: const BoxDecoration(
           color: AppColors.color004216,
           shape: BoxShape.circle,
         ),
-        child: Icon(icon, size: 18, color: AppColors.colorECC16E),
+        child: Image.asset(assetPath,
+            width: 18, height: 18, color: AppColors.colorECC16E),
       ),
     );
   }
