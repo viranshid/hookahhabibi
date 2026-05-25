@@ -5,6 +5,8 @@ import 'package:hookahhabibi/Managers/HHMenuManager.dart';
 import 'package:hookahhabibi/Managers/HHSessionManager.dart';
 import 'package:hookahhabibi/Managers/HHStorageManager.dart';
 import 'package:hookahhabibi/Managers/HHLockManager.dart';
+import 'package:hookahhabibi/Managers/HHCustomerManager.dart';
+import 'package:hookahhabibi/Managers/HHOrderManager.dart';
 import 'package:hookahhabibi/Screen/Login/Service/HHAuthService.dart';
 
 /// App Manager - Central coordinator for all managers
@@ -22,6 +24,8 @@ class HHAppManager extends ChangeNotifier {
   final HHLocationManager locationManager = HHLocationManager();
   final HHMenuManager menuManager = HHMenuManager();
   final HHLockManager lockManager = HHLockManager();
+  final HHCustomerManager customerManager = HHCustomerManager();
+  final HHOrderManager orderManager = HHOrderManager();
 
   // State
   bool _isInitializing = false;
@@ -211,6 +215,8 @@ class HHAppManager extends ChangeNotifier {
     await sessionManager.logout();
     locationManager.reset();
     menuManager.reset();
+    customerManager.reset();
+    orderManager.reset();
     await lockManager.reset();
 
     print('   ✅ Logout completed');
@@ -278,6 +284,8 @@ class HHAppManager extends ChangeNotifier {
     await sessionManager.clear();
     locationManager.reset();
     menuManager.reset();
+    customerManager.reset();
+    orderManager.reset();
     await lockManager.reset();
     _error = null;
     _isInitialized = false;

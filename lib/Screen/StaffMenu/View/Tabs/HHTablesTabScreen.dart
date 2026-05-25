@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hookahhabibi/Enums/HHButtonType.dart';
+import 'package:hookahhabibi/Managers/HHCustomerManager.dart';
 import 'package:hookahhabibi/Managers/HHSessionManager.dart';
+import 'package:hookahhabibi/Screen/Customer/Model/HHCustomerModel.dart';
 import 'package:hookahhabibi/Screen/StaffMenu/Model/HHTableModel.dart';
 import 'package:hookahhabibi/Screen/StaffMenu/Service/HHTableService.dart';
 import 'package:hookahhabibi/Screen/StaffMenu/View/Tabs/Components/HHTablesGridView.dart';
@@ -12,10 +14,25 @@ import 'package:hookahhabibi/utils/AppText.dart';
 import 'package:hookahhabibi/utils/AppTextStyle.dart';
 import 'package:hookahhabibi/utils/app_colors.dart';
 import 'package:hookahhabibi/utils/app_images.dart';
-import 'package:hookahhabibi/utils/app_routes.dart';
+import 'package:hookahhabibi/Screen/StaffMenu/Model/HHStaffBookingSelection.dart';
+import 'package:hookahhabibi/Screen/StaffMenu/Model/StaffMenuTab.dart';
+import 'package:provider/provider.dart';
 
 class HHTablesTabScreen extends StatefulWidget {
-  const HHTablesTabScreen({Key? key}) : super(key: key);
+  /// Optional callback used by the parent [HHStaffMenuScreen] to switch
+  /// tabs in place (e.g. after Continue, jump to the Menu tab without
+  /// pushing a new route).
+  final ValueChanged<StaffMenuTab>? onRequestTab;
+
+  /// Emitted on Continue with a snapshot of the picked customer + tables
+  /// + floor so the parent can pass it to the Menu tab.
+  final ValueChanged<HHStaffBookingSelection>? onBookingContinue;
+
+  const HHTablesTabScreen({
+    Key? key,
+    this.onRequestTab,
+    this.onBookingContinue,
+  }) : super(key: key);
 
   @override
   State<HHTablesTabScreen> createState() => _HHTablesTabScreenState();
@@ -71,6 +88,10 @@ class _HHTablesTabScreenState extends State<HHTablesTabScreen> {
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _mobileController = TextEditingController();
+  final FocusNode _nameFocus = FocusNode();
+  final LayerLink _nameFieldLink = LayerLink();
+  final OverlayPortalController _suggestionsCtrl = OverlayPortalController();
+  bool _suppressNameSearch = false;
   int _guestCount = 1;
 
   final HHTableService _tableService = HHTableService();
@@ -83,6 +104,7 @@ class _HHTablesTabScreenState extends State<HHTablesTabScreen> {
     super.initState();
     _nameController.addListener(_onCustomerInputChanged);
     _mobileController.addListener(_onCustomerInputChanged);
+    _nameFocus.addListener(_onNameFocusChanged);
     _loadTables();
   }
 
@@ -137,12 +159,65 @@ class _HHTablesTabScreenState extends State<HHTablesTabScreen> {
   void dispose() {
     _nameController.removeListener(_onCustomerInputChanged);
     _mobileController.removeListener(_onCustomerInputChanged);
+    _nameFocus.removeListener(_onNameFocusChanged);
     _nameController.dispose();
     _mobileController.dispose();
+    _nameFocus.dispose();
     super.dispose();
   }
 
   void _onCustomerInputChanged() => setState(() {});
+
+  void _onNameFocusChanged() {
+    if (!_nameFocus.hasFocus) {
+      // Defer so a tap on a suggestion row can fire before we close.
+      Future.delayed(const Duration(milliseconds: 120), () {
+        if (!mounted) return;
+        if (!_nameFocus.hasFocus && _suggestionsCtrl.isShowing) {
+          _suggestionsCtrl.hide();
+          context.read<HHCustomerManager>().clearResults();
+        }
+      });
+    } else {
+      final manager = context.read<HHCustomerManager>();
+      if (manager.searchResults.isNotEmpty || manager.isSearching) {
+        _suggestionsCtrl.show();
+      }
+    }
+  }
+
+  void _onNameChanged(String value) {
+    setState(() {});
+    if (_suppressNameSearch) return;
+
+    final manager = context.read<HHCustomerManager>();
+    // Editing after a selection clears the bound customer.
+    if (manager.selectedCustomer != null &&
+        manager.selectedCustomer!.name != value) {
+      manager.clearSelection(keepResults: true);
+    }
+
+    manager.searchDebounced(value);
+
+    if (value.trim().isNotEmpty) {
+      if (!_suggestionsCtrl.isShowing) _suggestionsCtrl.show();
+    } else {
+      if (_suggestionsCtrl.isShowing) _suggestionsCtrl.hide();
+    }
+  }
+
+  void _onCustomerPicked(HHCustomerModel customer) {
+    _suppressNameSearch = true;
+    _nameController.text = customer.name;
+    _nameController.selection =
+        TextSelection.collapsed(offset: _nameController.text.length);
+    _mobileController.text = customer.phone;
+    _suppressNameSearch = false;
+    context.read<HHCustomerManager>().selectCustomer(customer);
+    _suggestionsCtrl.hide();
+    _nameFocus.unfocus();
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -354,11 +429,129 @@ class _HHTablesTabScreenState extends State<HHTablesTabScreen> {
   }
 
   Widget _buildNameField() {
-    return _buildPillFieldShell(
-      child: _buildPlainTextField(
-        controller: _nameController,
-        hint: 'Customer Name *',
-        keyboardType: TextInputType.name,
+    return CompositedTransformTarget(
+      link: _nameFieldLink,
+      child: OverlayPortal(
+        controller: _suggestionsCtrl,
+        overlayChildBuilder: _buildSuggestionsOverlay,
+        child: _buildPillFieldShell(
+          child: _buildPlainTextField(
+            controller: _nameController,
+            focusNode: _nameFocus,
+            hint: 'Customer Name *',
+            keyboardType: TextInputType.name,
+            onChanged: _onNameChanged,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSuggestionsOverlay(BuildContext context) {
+    final manager = context.watch<HHCustomerManager>();
+    return Positioned(
+      width: _detailsFieldWidth,
+      child: CompositedTransformFollower(
+        link: _nameFieldLink,
+        showWhenUnlinked: false,
+        targetAnchor: Alignment.bottomLeft,
+        followerAnchor: Alignment.topLeft,
+        offset: const Offset(0, 6),
+        child: Material(
+          color: Colors.transparent,
+          child: _buildSuggestionsCard(manager),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSuggestionsCard(HHCustomerManager manager) {
+    return Container(
+      constraints: const BoxConstraints(maxHeight: 240),
+      decoration: BoxDecoration(
+        color: AppColors.color2B2B2B,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0x33ECC16E), width: 1),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x66000000),
+            blurRadius: 12,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: _buildSuggestionsBody(manager),
+    );
+  }
+
+  Widget _buildSuggestionsBody(HHCustomerManager manager) {
+    if (manager.isSearching && manager.searchResults.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 16),
+        child: Center(
+          child: SizedBox(
+            width: 22,
+            height: 22,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation(AppColors.colorECC16E),
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (manager.error != null && manager.searchResults.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+        child: AppText(
+          text: manager.error!,
+          appTextStyle: AppTextStyle.rubikRegular16Placeholder,
+        ),
+      );
+    }
+
+    if (manager.searchResults.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+        child: AppText(
+          text: 'No matching customers',
+          appTextStyle: AppTextStyle.rubikRegular16Placeholder,
+        ),
+      );
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      shrinkWrap: true,
+      itemCount: manager.searchResults.length,
+      separatorBuilder: (_, __) => const Divider(
+        height: 1,
+        color: Color(0x22FFFFFF),
+      ),
+      itemBuilder: (_, i) => _buildSuggestionRow(manager.searchResults[i]),
+    );
+  }
+
+  Widget _buildSuggestionRow(HHCustomerModel c) {
+    return InkWell(
+      onTap: () => _onCustomerPicked(c),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AppText(
+              text: c.name,
+              appTextStyle: AppTextStyle.jostMedium19White,
+            ),
+            const SizedBox(height: 2),
+            AppText(
+              text: c.phone.isEmpty ? '—' : '$_countryCode ${c.phone}',
+              appTextStyle: AppTextStyle.rubikRegular16Placeholder,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -404,12 +597,15 @@ class _HHTablesTabScreenState extends State<HHTablesTabScreen> {
     required String hint,
     required TextInputType keyboardType,
     List<TextInputFormatter>? inputFormatters,
+    FocusNode? focusNode,
+    ValueChanged<String>? onChanged,
   }) {
     return TextField(
       controller: controller,
+      focusNode: focusNode,
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,
-      onChanged: (_) => setState(() {}),
+      onChanged: onChanged ?? (_) => setState(() {}),
       cursorColor: AppColors.colorECC16E,
       style: AppTextStyleManager.getStyle(AppTextStyle.rubikRegular16Divider)
           .copyWith(color: AppColors.colorFFFFFF),
@@ -604,13 +800,88 @@ class _HHTablesTabScreenState extends State<HHTablesTabScreen> {
         type: HHButtonType.normal,
         width: _continueButtonWidth,
         height: _continueButtonHeight,
+        isEnabled: _canContinue,
         onPressed: _onContinuePressed,
       ),
     );
   }
 
+  /// Continue is enabled only when the staff has filled the minimum needed
+  /// to place an order on the next tab: customer name + phone + at least
+  /// one table selected. Re-evaluated automatically — controllers feed
+  /// `_onCustomerInputChanged` (which calls setState) and table taps
+  /// already setState through `_areas`.
+  bool get _canContinue {
+    final hasName = _nameController.text.trim().isNotEmpty;
+    final hasPhone = _mobileController.text.trim().isNotEmpty;
+    final hasTable = _areas.any((a) => a.tables.any((t) => t.isSelected));
+    return hasName && hasPhone && hasTable;
+  }
+
   void _onContinuePressed() {
-    Navigator.of(context).pushNamed(AppRoutes.routesProductList);
+    // Emit the selection to the parent so the Menu tab can render the
+    // customer / table / floor in its right-side KOT panel header.
+    widget.onBookingContinue?.call(_buildBookingSelection());
+
+    // Switch to the Menu tab inside HHStaffMenuScreen rather than pushing
+    // a new route. Falls back to a pushNamed only if the parent didn't
+    // wire the callback (shouldn't happen in normal navigation).
+    final requestTab = widget.onRequestTab;
+    if (requestTab != null) {
+      requestTab(StaffMenuTab.menu);
+    }
+  }
+
+  HHStaffBookingSelection _buildBookingSelection() {
+    // Collect server ids for the selected tables.
+    final tableIds = <int>[];
+    for (final area in _areas) {
+      for (final t in area.tables) {
+        if (t.isSelected) tableIds.add(t.id);
+      }
+    }
+
+    final session = HHSessionManager();
+    final locationId =
+        int.tryParse(session.selectedLocation?.id ?? '');
+
+    final selectedCustomer =
+        context.read<HHCustomerManager>().selectedCustomer;
+
+    return HHStaffBookingSelection(
+      customerName: _displayName(),
+      tableLabel: _selectedTablesLabel(),
+      floorLabel: _selectedFloorLabel(),
+      customerPhone: _mobileController.text.trim(),
+      customerId: selectedCustomer?.id,
+      tableIds: tableIds,
+      locationId: locationId,
+    );
+  }
+
+  /// Collects the area names that have at least one selected table.
+  /// Single-area → renders on two lines (e.g. "Ground\nFloor"); multi-area
+  /// joins with `, `.
+  String _selectedFloorLabel() {
+    final names = <String>[];
+    for (final area in _areas) {
+      final hasSelected = area.tables.any((t) => t.isSelected);
+      if (hasSelected && area.areaName.isNotEmpty) {
+        names.add(area.areaName);
+      }
+    }
+    if (names.isEmpty) return '—';
+    if (names.length == 1) {
+      // Soft-wrap single area name on the space so it renders on two lines
+      // in the narrow floor pill of HHKotPanel (e.g. "Ground Floor" →
+      // "Ground\nFloor"). Falls through unchanged if no space.
+      final name = names.first;
+      final spaceIdx = name.indexOf(' ');
+      return spaceIdx > 0
+          ? '${name.substring(0, spaceIdx)}\n${name.substring(spaceIdx + 1)}'
+          : name;
+    }
+    return names.join(', ');
   }
 
   String _selectedTablesLabel() {

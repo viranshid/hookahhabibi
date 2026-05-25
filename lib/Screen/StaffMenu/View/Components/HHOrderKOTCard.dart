@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:hookahhabibi/Screen/StaffMenu/Model/HHOrderModel.dart';
-import 'package:hookahhabibi/utils/AppText.dart';
-import 'package:hookahhabibi/utils/AppTextStyle.dart';
 import 'package:hookahhabibi/utils/app_colors.dart';
 import 'package:hookahhabibi/utils/app_images.dart';
 
@@ -53,6 +51,9 @@ class HHOrderKOTCard extends StatelessWidget {
     );
   }
 
+  // ──────────────────────────────────────────────────────────────
+  // HEADER
+  // ──────────────────────────────────────────────────────────────
   Widget _buildHeader() {
     return SizedBox(
       height: 50,
@@ -64,12 +65,6 @@ class HHOrderKOTCard extends StatelessWidget {
             left: 0,
             right: 0,
             child: Container(height: 6, color: order.status.indicatorColor),
-          ),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: Container(height: 1, color: AppColors.color266528),
           ),
           Row(
             children: [
@@ -96,19 +91,28 @@ class HHOrderKOTCard extends StatelessWidget {
       width: 147,
       height: 50,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10),
+        padding: const EdgeInsets.only(left: 10),
         child: Row(
           children: [
-            Image.asset(APPImages.icUserCircle,
-                width: 22, height: 22, color: AppColors.colorECC16E),
-            const SizedBox(width: 8),
+            Image.asset(
+              APPImages.icUserCircle,
+              width: 22,
+              height: 22,
+              color: AppColors.colorECC16E,
+            ),
+            const SizedBox(width: 5),
             Expanded(
-              child: AppText(
-                text: order.customerName,
-                appTextStyle: AppTextStyle.jostSemiBold18White,
-                customFontSize: 13,
-                customFontWeight: FontWeight.w600,
-                applyTextTransform: false,
+              child: Text(
+                order.customerName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontFamily: 'Oswald',
+                  fontWeight: FontWeight.w500,
+                  fontSize: 16,
+                  height: 20 / 16,
+                  color: Color(0xFFFFFFFF),
+                ),
               ),
             ),
           ],
@@ -117,17 +121,26 @@ class HHOrderKOTCard extends StatelessWidget {
     );
   }
 
+  String get _tableLabel {
+    final raw = order.tableNumber.trim();
+    return 'T - $raw';
+  }
+
   Widget _headerTable() {
     return SizedBox(
       width: 56,
       height: 50,
       child: Center(
-        child: AppText(
-          text: 'T – ${order.tableNumber}',
-          appTextStyle: AppTextStyle.jostSemiBold18White,
-          customFontSize: 13,
-          customFontWeight: FontWeight.w700,
-          applyTextTransform: false,
+        child: Text(
+          _tableLabel,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontFamily: 'Oswald',
+            fontWeight: FontWeight.w400,
+            fontSize: 16,
+            height: 16 / 16,
+            color: Color(0xFFFFFFFF),
+          ),
         ),
       ),
     );
@@ -140,19 +153,12 @@ class HHOrderKOTCard extends StatelessWidget {
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onViewTap,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Image.asset(APPImages.icEye,
-                width: 18, height: 13, color: AppColors.colorECC16E),
-            const SizedBox(height: 2),
-            AppText(
-              text: '${order.viewCount}',
-              appTextStyle: AppTextStyle.jostSemiBold18White,
-              customFontSize: 8,
-              applyTextTransform: false,
-            ),
-          ],
+        child: Center(
+          child: Image.asset(
+            APPImages.icEyeLight,
+            width: 22,
+            height: 22,
+          ),
         ),
       ),
     );
@@ -164,85 +170,106 @@ class HHOrderKOTCard extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         onTap: onMenuTap,
         child: Center(
-          child: Container(
+          child: Image.asset(
+            APPImages.icThreeDotsVertical,
             width: 32,
             height: 32,
-            decoration: const BoxDecoration(
-              color: Color(0x29000000),
-              shape: BoxShape.circle,
-            ),
-            child: Image.asset(APPImages.icThreeDotsVertical,
-                width: 4, height: 16, color: AppColors.colorECC16E),
+            color: AppColors.colorECC16E,
           ),
         ),
       ),
     );
   }
 
+  // ──────────────────────────────────────────────────────────────
+  // KOT BAND
+  // ──────────────────────────────────────────────────────────────
   Widget _buildKotBand(HHKotEntry kot) {
     return Container(
       height: 46,
-      color: AppColors.color003210,
+      decoration: const BoxDecoration(
+        color: AppColors.color003210,
+        border: Border(
+          top: BorderSide(color: Color(0x1AFFFFFF), width: 1),
+          bottom: BorderSide(color: Color(0x1AFFFFFF), width: 1),
+        ),
+      ),
       child: Column(
         children: [
-          Container(
-            height: 25,
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            decoration: const BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: Color(0x26FFFFFF), width: 1),
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                AppText(
-                  text: 'Kot. ${kot.kotNumber}',
-                  appTextStyle: AppTextStyle.jostSemiBold18White,
-                  customFontSize: 12,
-                  customFontWeight: FontWeight.w600,
-                  applyTextTransform: false,
-                ),
-                AppText(
-                  text: kot.time,
-                  appTextStyle: AppTextStyle.jostSemiBold18White,
-                  customFontSize: 12,
-                  applyTextTransform: false,
-                ),
-              ],
-            ),
-          ),
           SizedBox(
-            height: 21,
+            height: 26,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 10),
               child: Row(
                 children: [
+                  Text(
+                    'KOT - ${kot.kotNumber}',
+                    style: const TextStyle(
+                      fontFamily: 'Oswald',
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                      height: 16 / 14,
+                      color: Color(0xFFFFFFFF),
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    width: 1,
+                    height: 14,
+                    color: const Color(0x1AFFFFFF),
+                  ),
+                  const Spacer(),
+                  _kotTimeLabel(kot.time),
+                ],
+              ),
+            ),
+          ),
+          // dashed separator: width 278, 1px, dashes 3,3, #FFFFFF26
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: CustomPaint(
+              size: const Size(278, 1),
+              painter: _DashedLinePainter(
+                color: const Color(0x26FFFFFF),
+                dashWidth: 3,
+                dashSpace: 3,
+                strokeWidth: 1,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(left: 10, right: 10),
+              child: Row(
+                children: [
                   Expanded(
-                    child: AppText(
-                      text: 'Item',
-                      appTextStyle: AppTextStyle.jostSemiBold18White,
-                      customColor: AppColors.colorC4C4C4,
-                      customFontSize: 10,
-                      customFontWeight: FontWeight.w400,
-                      applyTextTransform: false,
+                    child: Text(
+                      _itemCountLabel(),
+                      style: const TextStyle(
+                        fontFamily: 'Oswald',
+                        fontWeight: FontWeight.w400,
+                        fontSize: 12,
+                        height: 16 / 12,
+                        letterSpacing: 12 * 0.05,
+                        color: AppColors.colorC4C4C4,
+                      ),
                     ),
                   ),
                   Container(
                     width: 1,
+                    height: 12,
+                    margin: const EdgeInsets.only(right: 15),
                     color: const Color(0x1AFFFFFF),
-                    margin: const EdgeInsets.symmetric(horizontal: 8),
                   ),
-                  SizedBox(
-                    width: 38,
-                    child: AppText(
-                      text: 'qty.',
-                      appTextStyle: AppTextStyle.jostSemiBold18White,
-                      customColor: AppColors.colorC4C4C4,
-                      customFontSize: 10,
-                      customFontWeight: FontWeight.w400,
-                      textAlign: TextAlign.right,
-                      applyTextTransform: false,
+                  const Text(
+                    'Qty.',
+                    style: TextStyle(
+                      fontFamily: 'Oswald',
+                      fontWeight: FontWeight.w400,
+                      fontSize: 12,
+                      height: 16 / 12,
+                      letterSpacing: 12 * 0.05,
+                      color: AppColors.colorC4C4C4,
                     ),
                   ),
                 ],
@@ -254,6 +281,57 @@ class HHOrderKOTCard extends StatelessWidget {
     );
   }
 
+  String _itemCountLabel() {
+    int total = 0;
+    for (final entry in order.kotEntries) {
+      for (final item in entry.items) {
+        total += item.qty;
+      }
+    }
+    return 'Item ($total)';
+  }
+
+  Widget _kotTimeLabel(String time) {
+    // Expected formats: "10:06" or "10:06 MM:SS"
+    final parts = time.split(' ');
+    final hhmm = parts.isNotEmpty ? parts.first : time;
+    final mmss = parts.length > 1 ? parts.sublist(1).join(' ') : null;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
+      children: [
+        Text(
+          hhmm,
+          style: const TextStyle(
+            fontFamily: 'Oswald',
+            fontWeight: FontWeight.w500,
+            fontSize: 14,
+            height: 16 / 14,
+            color: Color(0xFFFFFFFF),
+          ),
+        ),
+        if (mmss != null) ...[
+          const SizedBox(width: 4),
+          Text(
+            mmss,
+            style: const TextStyle(
+              fontFamily: 'Oswald',
+              fontWeight: FontWeight.w300,
+              fontSize: 12,
+              height: 16 / 12,
+              color: Color(0xFFF4F5F7),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  // ITEMS BODY
+  // ──────────────────────────────────────────────────────────────
   Widget _buildItemsBody() {
     final items = <Widget>[];
     for (int i = 0; i < order.kotEntries.length; i++) {
@@ -262,12 +340,9 @@ class HHOrderKOTCard extends StatelessWidget {
         items.add(_buildItemRow(item));
       }
     }
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: items,
-      ),
+    return ListView(
+      padding: const EdgeInsets.only(left: 10, right: 10, top: 10, bottom: 4),
+      children: items,
     );
   }
 
@@ -277,50 +352,54 @@ class HHOrderKOTCard extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          AppText(
-            text: 'Kot. ${kot.kotNumber}',
-            appTextStyle: AppTextStyle.jostSemiBold18White,
-            customFontSize: 12,
-            customFontWeight: FontWeight.w600,
-            applyTextTransform: false,
+          Text(
+            'KOT - ${kot.kotNumber}',
+            style: const TextStyle(
+              fontFamily: 'Oswald',
+              fontWeight: FontWeight.w500,
+              fontSize: 14,
+              height: 16 / 14,
+              color: Color(0xFFFFFFFF),
+            ),
           ),
-          AppText(
-            text: kot.time,
-            appTextStyle: AppTextStyle.jostSemiBold18White,
-            customFontSize: 12,
-            applyTextTransform: false,
-          ),
+          _kotTimeLabel(kot.time),
         ],
       ),
     );
   }
 
   Widget _buildItemRow(HHOrderItem item) {
-    return SizedBox(
-      height: 17,
+    const itemTextStyle = TextStyle(
+      fontFamily: 'Oswald',
+      fontWeight: FontWeight.w400,
+      fontSize: 15,
+      height: 14 / 15,
+      color: Color(0xFFFFFFFF),
+    );
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Expanded(
-            child: AppText(
-              text: item.name,
-              appTextStyle: AppTextStyle.jostSemiBold18White,
-              customFontSize: 11,
-              customFontWeight: FontWeight.w400,
-              applyTextTransform: false,
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 170),
+            child: Text(
+              item.name,
+              style: itemTextStyle,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-          AppText(
-            text: '${item.qty}',
-            appTextStyle: AppTextStyle.jostSemiBold18White,
-            customFontSize: 11,
-            customFontWeight: FontWeight.w400,
-            applyTextTransform: false,
-          ),
+          const Spacer(),
+          Text('${item.qty}', style: itemTextStyle),
         ],
       ),
     );
   }
 
+  // ──────────────────────────────────────────────────────────────
+  // FOOTER
+  // ──────────────────────────────────────────────────────────────
   Widget _buildFooter() {
     final bool disabled = order.isTerminal;
     return Opacity(
@@ -335,12 +414,17 @@ class HHOrderKOTCard extends StatelessWidget {
           ),
         ),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            _iconButton(APPImages.icDocumentAdd, disabled ? null : onAddItem),
-            _iconButton(APPImages.icDocumentEdit, disabled ? null : onEditNote),
-            _iconButton(APPImages.icNotes, disabled ? null : onViewBill),
-            _iconButton(APPImages.icSplit, disabled ? null : onTransfer),
+            _footerIcon(APPImages.icKotCardAdd, disabled ? null : onAddItem),
+            const SizedBox(width: 9),
+            _footerIcon(APPImages.icKotCardEdit, disabled ? null : onEditNote),
+            const SizedBox(width: 9),
+            _footerIcon(APPImages.icKotCardNotes, disabled ? null : onViewBill),
+            const SizedBox(width: 9),
+            _footerIcon(APPImages.icKotCardSplit, disabled ? null : onTransfer),
+            const SizedBox(width: 10),
             _settleButton(disabled ? null : onSettle),
           ],
         ),
@@ -348,21 +432,11 @@ class HHOrderKOTCard extends StatelessWidget {
     );
   }
 
-  Widget _iconButton(String assetPath, VoidCallback? onTap) {
+  Widget _footerIcon(String assetPath, VoidCallback? onTap) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
-      child: Container(
-        width: 36,
-        height: 36,
-        alignment: Alignment.center,
-        decoration: const BoxDecoration(
-          color: AppColors.color004216,
-          shape: BoxShape.circle,
-        ),
-        child: Image.asset(assetPath,
-            width: 18, height: 18, color: AppColors.colorECC16E),
-      ),
+      child: Image.asset(assetPath, width: 36, height: 36),
     );
   }
 
@@ -376,17 +450,53 @@ class HHOrderKOTCard extends StatelessWidget {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: AppColors.color004216,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(50),
         ),
-        child: AppText(
-          text: 'Settled Order',
-          appTextStyle: AppTextStyle.jostSemiBold18White,
-          customColor: AppColors.colorECC16E,
-          customFontSize: 13,
-          customFontWeight: FontWeight.w600,
-          applyTextTransform: false,
+        child: const Text(
+          'Settle Order',
+          style: TextStyle(
+            fontFamily: 'Oswald',
+            fontWeight: FontWeight.w400,
+            fontSize: 16,
+            height: 1.0,
+            color: AppColors.colorECC16E,
+          ),
         ),
       ),
     );
   }
+}
+
+class _DashedLinePainter extends CustomPainter {
+  final Color color;
+  final double dashWidth;
+  final double dashSpace;
+  final double strokeWidth;
+
+  _DashedLinePainter({
+    required this.color,
+    required this.dashWidth,
+    required this.dashSpace,
+    required this.strokeWidth,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth;
+    double startX = 0;
+    final y = size.height / 2;
+    while (startX < size.width) {
+      canvas.drawLine(Offset(startX, y), Offset(startX + dashWidth, y), paint);
+      startX += dashWidth + dashSpace;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedLinePainter old) =>
+      old.color != color ||
+      old.dashWidth != dashWidth ||
+      old.dashSpace != dashSpace ||
+      old.strokeWidth != strokeWidth;
 }

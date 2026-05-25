@@ -65,12 +65,18 @@ class HHMenuManager extends ChangeNotifier {
     }
   }
 
-  /// Load dishes for a category
+  /// Load dishes for a category.
+  ///
+  /// TEMPORARY: the server's `filters[location_id]` and `filters[dish_cat_id]`
+  /// aren't reliable yet, so we fetch the entire menu tree unfiltered and
+  /// narrow to the requested category client-side. Once the backend filters
+  /// are fixed, switch back to passing `locationId` + `dishCatId` to the
+  /// service.
   Future<bool> loadDishes({
     required String categoryId,
   }) async {
-    if (!_sessionManager.isLoggedIn || !_sessionManager.hasSelectedLocation) {
-      _error = 'User not logged in or location not selected';
+    if (!_sessionManager.isLoggedIn) {
+      _error = 'User not logged in';
       notifyListeners();
       return false;
     }
@@ -82,8 +88,49 @@ class HHMenuManager extends ChangeNotifier {
     try {
       final response = await _dishService.getDishes(
         bearerToken: _sessionManager.bearerToken!,
-        locationId: _sessionManager.selectedLocation!.id,
-        dishCatId: categoryId,
+        // Filters intentionally left empty — see method doc.
+      );
+
+      if (response.success && response.data != null) {
+        final all = response.data!;
+        // Narrow to the requested parent category. If not found, fall back to
+        // the full tree so the UI still has something to render.
+        _currentDishes = all.containsKey(categoryId)
+            ? {categoryId: all[categoryId]!}
+            : all;
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      } else {
+        _error = response.message ?? 'Failed to load dishes';
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
+    } catch (e) {
+      _error = 'Error loading dishes: ${e.toString()}';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Load the entire menu (all parent cats with subcats + dishes), unfiltered.
+  /// Useful for "browse everything" / search views.
+  Future<bool> loadAllDishes() async {
+    if (!_sessionManager.isLoggedIn) {
+      _error = 'User not logged in';
+      notifyListeners();
+      return false;
+    }
+
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final response = await _dishService.getDishes(
+        bearerToken: _sessionManager.bearerToken!,
       );
 
       if (response.success && response.data != null) {

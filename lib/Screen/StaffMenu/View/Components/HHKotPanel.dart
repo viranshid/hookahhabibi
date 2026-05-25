@@ -19,6 +19,11 @@ class HHKotPanel extends StatelessWidget {
     this.onDecrementItem,
     this.onRemoveItem,
     this.onAddNote,
+    this.onSave,
+    this.onKotAndPrint,
+    this.onSplit,
+    this.onSendToKitchen,
+    this.isPlacingOrder = false,
   }) : super(key: key);
 
   final String customerName;
@@ -30,6 +35,18 @@ class HHKotPanel extends StatelessWidget {
   final ValueChanged<String>? onDecrementItem;
   final ValueChanged<String>? onRemoveItem;
   final ValueChanged<String>? onAddNote;
+
+  /// Footer actions. Pass `null` to render the corresponding button disabled
+  /// (Split is the typical case — there's no order_id yet on this screen).
+  final VoidCallback? onSave;
+  final VoidCallback? onKotAndPrint;
+  final VoidCallback? onSplit;
+  final VoidCallback? onSendToKitchen;
+
+  /// When true, the action buttons render disabled and the Send-to-Kitchen
+  /// CTA shows a small spinner — used while the place-order request is
+  /// in flight to prevent double-submit.
+  final bool isPlacingOrder;
 
   double get _totalPrice =>
       selectedItems.fold(0.0, (sum, item) => sum + item.totalPrice);
@@ -170,6 +187,7 @@ class HHKotPanel extends StatelessWidget {
   }
 
   Widget _buildActionButtonsRow() {
+    final canAct = !isPlacingOrder;
     return SizedBox(
       height: Dimens.margin36,
       child: Padding(
@@ -181,19 +199,19 @@ class HHKotPanel extends StatelessWidget {
               label: 'Save',
               width: Dimens.margin75,
               backgroundColor: AppColors.color84994F99,
-              onPressed: () {},
+              onPressed: canAct ? onSave : null,
             ),
             _actionButton(
               label: 'KOT & Print',
               width: Dimens.margin110,
               backgroundColor: AppColors.color84994F99,
-              onPressed: () {},
+              onPressed: canAct ? onKotAndPrint : null,
             ),
             _actionButton(
               label: 'Split',
               width: Dimens.margin75,
               backgroundColor: AppColors.color19552D,
-              onPressed: () {},
+              onPressed: canAct ? onSplit : null,
             ),
           ],
         ),
@@ -205,23 +223,27 @@ class HHKotPanel extends StatelessWidget {
     required String label,
     required double width,
     required Color backgroundColor,
-    required VoidCallback onPressed,
+    required VoidCallback? onPressed,
   }) {
+    final enabled = onPressed != null;
     return SizedBox(
       width: width,
       height: Dimens.margin36,
-      child: Material(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(Dimens.margin60),
-        child: InkWell(
+      child: Opacity(
+        opacity: enabled ? 1.0 : 0.45,
+        child: Material(
+          color: backgroundColor,
           borderRadius: BorderRadius.circular(Dimens.margin60),
-          onTap: onPressed,
-          child: Center(
-            child: AppText(
-              text: label,
-              appTextStyle: AppTextStyle.oswaldMedium18White,
-              maxLines: 1,
-              applyTextTransform: false,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(Dimens.margin60),
+            onTap: onPressed,
+            child: Center(
+              child: AppText(
+                text: label,
+                appTextStyle: AppTextStyle.oswaldMedium18White,
+                maxLines: 1,
+                applyTextTransform: false,
+              ),
             ),
           ),
         ),
@@ -230,23 +252,37 @@ class HHKotPanel extends StatelessWidget {
   }
 
   Widget _buildSendToKitchenButton() {
+    final enabled = !isPlacingOrder && onSendToKitchen != null;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: Dimens.margin10),
       child: SizedBox(
         width: Dimens.margin280,
         height: Dimens.margin40,
-        child: Material(
-          color: AppColors.colorBD7D28,
-          borderRadius: BorderRadius.circular(Dimens.margin60),
-          child: InkWell(
+        child: Opacity(
+          opacity: enabled ? 1.0 : 0.55,
+          child: Material(
+            color: AppColors.colorBD7D28,
             borderRadius: BorderRadius.circular(Dimens.margin60),
-            onTap: () {},
-            child: Center(
-              child: AppText(
-                text: 'Send to the Kitchen',
-                appTextStyle: AppTextStyle.oswaldMedium20White,
-                maxLines: 1,
-                applyTextTransform: false,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(Dimens.margin60),
+              onTap: enabled ? onSendToKitchen : null,
+              child: Center(
+                child: isPlacingOrder
+                    ? const SizedBox(
+                        width: Dimens.margin22,
+                        height: Dimens.margin22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                              AppColors.colorFFFFFF),
+                        ),
+                      )
+                    : AppText(
+                        text: 'Send to the Kitchen',
+                        appTextStyle: AppTextStyle.oswaldMedium20White,
+                        maxLines: 1,
+                        applyTextTransform: false,
+                      ),
               ),
             ),
           ),

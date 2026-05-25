@@ -5,7 +5,9 @@ import 'package:hookahhabibi/Screen/Cart/View/HHViewCartScreen.dart';
 import 'package:hookahhabibi/Screen/Location/View/HHLocationScreen.dart';
 import 'package:hookahhabibi/Screen/Notifications/View/HHNotificationsScreen.dart';
 import 'package:hookahhabibi/Screen/SplashScreen.dart';
+import 'package:hookahhabibi/Managers/HHSessionManager.dart';
 import 'package:hookahhabibi/Screen/Login/HHLogin.dart';
+import 'package:hookahhabibi/Screen/Menu/View/HHMenuScreen.dart';
 import 'package:hookahhabibi/Screen/StaffMenu/View/HHStaffMenuScreen.dart';
 import 'package:hookahhabibi/Screen/Welcom/View/HHWelcom.dart';
 import 'package:hookahhabibi/utils/app_routes.dart';
@@ -41,6 +43,22 @@ class RouteGenerator {
       case AppRoutes.routesStaffMenu:
         return FadePageRouteBuilder(
           builder: (_) => const HHStaffMenuScreen(),
+        );
+
+      case AppRoutes.routesProductList:
+        // Caller may pass {'locationId': ..., 'locationName': ..., 'selectedCategoryId': ...}
+        // via Navigator.pushNamed(arguments:). Otherwise fall back to the
+        // currently-selected location on HHSessionManager.
+        final argMap = args is Map ? Map<String, dynamic>.from(args) : const {};
+        final session = HHSessionManager();
+        final fallbackLoc = session.selectedLocation;
+        return FadePageRouteBuilder(
+          builder: (_) => HHMenuScreen(
+            locationId: (argMap['locationId'] as String?) ?? fallbackLoc?.id ?? '',
+            locationName:
+                (argMap['locationName'] as String?) ?? fallbackLoc?.title ?? '',
+            selectedCategoryId: argMap['selectedCategoryId'] as String?,
+          ),
         );
 
       case AppRoutes.routesCart:

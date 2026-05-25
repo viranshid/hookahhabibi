@@ -78,6 +78,11 @@ class APPImages {
   static const icNotes = '${imageBaseURL}ic_notes.png';
   static const icSplit = '${imageBaseURL}ic_split.png';
   static const icEye = '${imageBaseURL}ic_eye.png';
+  static const icEyeLight = '${imageBaseURL}ic_eye-light.png';
+  static const icKotCardAdd = '${imageBaseURL}ic_kot_card_add.png';
+  static const icKotCardEdit = '${imageBaseURL}ic_kot_card_edit.png';
+  static const icKotCardNotes = '${imageBaseURL}ic_kot_card_notes.png';
+  static const icKotCardSplit = '${imageBaseURL}ic_kot_card_split.png';
 
   //Table Cards
   static const icKotRunningTableCard =
@@ -94,4 +99,12 @@ class APPImages {
   static const temp3 = '${imageBaseURL}temp3.jpg';
 
   static const String facebook = '${imageBaseURLSVG}facebook.svg';
+
+  // Split Order Bill modal
+  static const String icSvgCheckboxOutline =
+      '${imageBaseURLSVG}ic_checkbox-outline.svg';
+  static const String icSvgCheckboxSelected =
+      '${imageBaseURLSVG}ic_checkbox-selected.svg';
+  static const String icSvgList = '${imageBaseURLSVG}ic_list.svg';
+  static const String icSvgPercentage = '${imageBaseURLSVG}ic_percentage.svg';
 }

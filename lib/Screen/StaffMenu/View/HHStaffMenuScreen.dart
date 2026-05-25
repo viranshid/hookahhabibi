@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hookahhabibi/Managers/HHLocationManager.dart';
+import 'package:hookahhabibi/Screen/StaffMenu/Model/HHStaffBookingSelection.dart';
 import 'package:hookahhabibi/Screen/StaffMenu/Model/StaffMenuTab.dart';
 import 'package:hookahhabibi/Screen/StaffMenu/View/Components/HHStaffMenuHeader.dart';
 import 'package:hookahhabibi/Screen/StaffMenu/View/Tabs/HHMenuTabScreen.dart';
@@ -18,10 +19,15 @@ class HHStaffMenuScreen extends StatefulWidget {
 class _HHStaffMenuScreenState extends State<HHStaffMenuScreen> {
   static const double _headerHeight = 80;
   StaffMenuTab _selectedTab = StaffMenuTab.tables;
+  HHStaffBookingSelection _booking = HHStaffBookingSelection.empty;
 
   void _onTabSelected(StaffMenuTab tab) {
     if (tab == _selectedTab) return;
     setState(() => _selectedTab = tab);
+  }
+
+  void _onBookingContinue(HHStaffBookingSelection booking) {
+    setState(() => _booking = booking);
   }
 
   @override
@@ -67,9 +73,15 @@ class _HHStaffMenuScreenState extends State<HHStaffMenuScreen> {
   Widget _buildTabContent(StaffMenuTab tab) {
     switch (tab) {
       case StaffMenuTab.tables:
-        return const HHTablesTabScreen();
+        return HHTablesTabScreen(
+          onRequestTab: _onTabSelected,
+          onBookingContinue: _onBookingContinue,
+        );
       case StaffMenuTab.menu:
-        return const HHMenuTabScreen();
+        return HHMenuTabScreen(
+          booking: _booking,
+          onRequestTab: _onTabSelected,
+        );
       case StaffMenuTab.orders:
         return const HHOrdersTabScreen();
     }

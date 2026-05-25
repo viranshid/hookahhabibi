@@ -45,20 +45,31 @@ class HHDishService {
     }
   }
 
-  /// Get dishes with filters
+  /// Get dishes with optional filters.
+  ///
+  /// Pass empty strings (or omit) to fetch the entire menu tree
+  /// (`parent_dish_cats` → `dish_cats` → `dishes`). Currently the server's
+  /// `filters[location_id]` and `filters[dish_cat_id]` aren't reliable, so
+  /// the manager calls this unfiltered and narrows the result client-side.
   Future<ApiResponse<Map<String, HHDishCategoryModel>>> getDishes({
     required String bearerToken,
-    required String locationId,
-    required String dishCatId,
+    String locationId = '',
+    String dishCatId = '',
   }) async {
     try {
+      final fields = <String, String>{
+        'bearer_token': bearerToken,
+      };
+      if (locationId.isNotEmpty) {
+        fields['filters[location_id]'] = locationId;
+      }
+      if (dishCatId.isNotEmpty) {
+        fields['filters[dish_cat_id]'] = dishCatId;
+      }
+
       final response = await _apiService.postMultipart(
         endpoint: '/api/get-dishes',
-        fields: {
-          'bearer_token': bearerToken,
-          'filters[location_id]': locationId,
-          'filters[dish_cat_id]': dishCatId,
-        },
+        fields: fields,
       );
 
       // Parse parent dish categories with nested structure

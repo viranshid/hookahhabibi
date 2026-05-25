@@ -58,6 +58,16 @@ class AppColors {
   static const colorTablePrinted = Color(0xFF84994F);
   static const colorTablePrintedFill = Color(0x4D84994F);
 
+  // Split-bill modal palette
+  static const colorD09843 = Color(0xFFD09843); // Checkbox + "Add" pill fill
+  static const colorFF5F57 = Color(0xFFFF5F57); // Modal close X (macOS red)
+  static const colorF4F7F4 = Color(0xFFF4F7F4); // Card field label
+  static const color17171780 = Color(0x80171717); // Input fill (50% dark)
+  static const color01110A33 = Color(0x3301110A); // Input border (20%)
+  static const colorWhite33 = Color(0x33FFFFFF); // Divider / ghost text
+  static const colorBlack33 = Color(0x33000000); // Cancel button bg
+  static const colorWhite40 = Color(0x40FFFFFF); // Ghost placeholder text
+
   static const Color transparentColor = Colors.transparent;
   // Your existing gradients
   static const linearGradientFB9400FFAB38 = LinearGradient(

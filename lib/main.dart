@@ -7,6 +7,8 @@ import 'package:hookahhabibi/Managers/HHSessionManager.dart';
 import 'package:hookahhabibi/Managers/HHLocationManager.dart';
 import 'package:hookahhabibi/Managers/HHMenuManager.dart';
 import 'package:hookahhabibi/Managers/HHLockManager.dart';
+import 'package:hookahhabibi/Managers/HHCustomerManager.dart';
+import 'package:hookahhabibi/Managers/HHOrderManager.dart';
 import 'package:hookahhabibi/utils/app_routes.dart';
 import 'package:hookahhabibi/utils/routes_generator.dart';
 import 'package:provider/provider.dart';
@@ -39,6 +41,8 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider<HHLocationManager>.value(value: appManager.locationManager),
         ChangeNotifierProvider<HHMenuManager>.value(value: appManager.menuManager),
         ChangeNotifierProvider<HHLockManager>.value(value: appManager.lockManager),
+        ChangeNotifierProvider<HHCustomerManager>.value(value: appManager.customerManager),
+        ChangeNotifierProvider<HHOrderManager>.value(value: appManager.orderManager),
       ],
       child: MaterialApp(
         localizationsDelegates: [AppLocalizations.delegate],
